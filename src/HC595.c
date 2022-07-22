@@ -11,6 +11,8 @@ SCLK------------>PA2
 GND------------>½ÓµØ
 **************************/
 
+#define DELAY delay_us(1)
+
 #define DIO_0 GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_RESET)
 #define DIO_1 GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_SET)
 
@@ -58,9 +60,9 @@ void HC595_Send_Byte(unsigned char byte)
 			DIO_0;
 		
 		SCLK_0;
-		delay_us(10);
+		DELAY;
 		SCLK_1;
-		delay_us(10);
+		DELAY;
 		
 		byte <<= 1;
 	}
@@ -76,9 +78,9 @@ void HC595_Send_Data(unsigned char num, unsigned char show_bit)
 	HC595_Send_Byte(1 << show_bit);  
 	
 	RCLK_0;
-	delay_us(10);
+	DELAY;
 	RCLK_1;
-	delay_us(10);
+	DELAY;
 }
 
 void display(unsigned int n)
