@@ -19,6 +19,10 @@ const server = net.createServer(function(conn) {
 const serialPort = new serial.SerialPort({
 	path: config.com,
 	baudRate: config.baudRate,
+	dataBits: config.dataBits,
+	parity: config.parity,
+	stopBits: config.stopBits,
+	rtscts: config.rtscts,
 	autoOpen: false
 });
 const setAlarm = function() {

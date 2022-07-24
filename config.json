@@ -1,5 +1,9 @@
 {
   "com": "COM3",
   "port": 2023,
-  "baudRate": 230400
+  "baudRate": 230400,
+  "dataBits": 8,
+  "parity": "even",
+  "stopBits": 1,
+  "rtscts": false
 }

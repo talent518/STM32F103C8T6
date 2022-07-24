@@ -359,9 +359,9 @@ void COM_Init(u32 BaudRate)
 	
 	// 初始化串口1结构体
 	USART_InitStructure.USART_BaudRate = BaudRate; // 一般设置为9600
-	USART_InitStructure.USART_WordLength = USART_WordLength_8b; // 8位数据长度
+	USART_InitStructure.USART_WordLength = USART_WordLength_9b; // 8位数据长度+1位校验位
 	USART_InitStructure.USART_StopBits = USART_StopBits_1; // 一个停止位
-	USART_InitStructure.USART_Parity = USART_Parity_No; // 奇偶校验位
+	USART_InitStructure.USART_Parity = USART_Parity_Even; // 奇偶校验位
 	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;// 无硬件数据流控制
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx; // 收发模式
 	USART_Init(USART1, &USART_InitStructure); // 初始化串口1
