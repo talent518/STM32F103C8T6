@@ -3,6 +3,7 @@
 #include "stm32f10x_dma.h"
 #include "stm32f10x_rcc.h"
 
+#include "LED.h"
 #include "COM.h"
 
 #include <stdio.h>
@@ -48,6 +49,8 @@ typedef struct {
 #define cmd_sw cmd_switch
 static const cmd_t cmds[] = {
 	CMD(help, "Command help", "<cmd>...", 0, 10),
+	CMD(rtc, "Set RTC", "<year> <month> <day> <hour> <minute> <second>", 6, 6),
+	CMD(alarm, "Set Alarm", "<year> <month> <day> <hour> <minute> <second>", 6, 6),
 };
 #define cmd_size (sizeof(cmds) / sizeof(cmd_t))
 
@@ -210,16 +213,17 @@ void USART1_IRQHandler(void)
 		char *p, *p2, *p3, *buf;
 		static char rxBuf[DMA_RX_SIZE];
 		
+		USART1->SR;USART1->DR; // 必须的，不然会导致IDLE中断清除不掉问题
 		USART_ClearITPendingBit(USART1, USART_IT_IDLE); // 清空闲标志位
-		DMA_Cmd(DMA1_Channel5, DISABLE);
 		
+		DMA_Cmd(DMA1_Channel5, DISABLE);
 		n = DMA_RX_SIZE - DMA_GetCurrDataCounter(DMA1_Channel5);
 		memcpy(rxBuf, DMA_RX_BUF, n);
 		DMA_SetCurrDataCounter(DMA1_Channel5, DMA_RX_SIZE);
 		DMA_Cmd(DMA1_Channel5, ENABLE); // 打开DMA
-		
+
 	#if 0
-		COM_SendData(rxBuf, n);
+		COM_SendData((u8*) rxBuf, n);
 	#else
 		p2 = rxBuf;
 		while(n)
@@ -229,7 +233,7 @@ void USART1_IRQHandler(void)
 			if(p)
 			{
 				p3 = p + 1;
-				n2 = p - p2 + 1;
+				n2 = p3 - p2;
 				n -= n2;
 				
 				if(RX_CNT + n2 < RX_SIZE && cmdLineSize < CMD_LINE_SIZE)
@@ -252,9 +256,9 @@ void USART1_IRQHandler(void)
 					}
 					
 					p --;
-					while(p >= buf && *p == '\r' || *p == '\n')
+					while(p >= buf && (*p == '\r' || *p == '\n'))
 					{
-						*p--  = '\0';
+						*p-- = '\0';
 					}
 				}
 				else
@@ -288,25 +292,17 @@ void USART1_IRQHandler(void)
 		}
 	#endif
 	}
-	
-	// 检查DMA发送完成，关闭TC标志位
-	if(USART_GetITStatus(USART1, USART_IT_TXE) == RESET) // 发送中断: 发送完成
-	{
-		USART_ITConfig(USART1, USART_IT_TC, DISABLE);
-	}
 }
 
 // 串口1的DMA发送中断
 void DMA1_Channel4_IRQHandler(void)
 {
-	if(DMA_GetITStatus(DMA1_IT_TC4))
+	if(DMA_GetITStatus(DMA1_IT_TC4) != RESET)
 	{
 		DMA_ClearITPendingBit(DMA1_IT_TC4);
 		DMA_Cmd(DMA1_Channel4, DISABLE);
 		
 		DMA_SetCurrDataCounter(DMA1_Channel4, 0); // 清除数据长度
-		
-		USART_ITConfig(USART1, USART_IT_TC, ENABLE); // 打开串口1的发送完成中断
 		
 		TX_BUF_WAIT = 0;
 		DMA_SendData();
@@ -324,7 +320,7 @@ void COM_Init(u32 BaudRate)
 	NVIC_InitTypeDef NVIC_InitStructure;
 	DMA_InitTypeDef DMA_InitStructure;
 
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOA, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
 
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -335,21 +331,7 @@ void COM_Init(u32 BaudRate)
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	USART_DeInit(USART1);
-
-	//USART1的收发中断
-	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn; // 使能串口1中断
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; // 先占优先级2级
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3; // 从优先级2级
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; // 使能外部中断通道
-	NVIC_Init(&NVIC_InitStructure); // 根据NVIC_InitStruct中指定的参数初始化外设NVIC寄存器
-
-	// DMA1的串口1发送中断
-	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel4_IRQn; // 使能串口1中断
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2; // 先占优先级2级
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 7; // 从优先级2级
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; // 使能外部中断通道
-	NVIC_Init(&NVIC_InitStructure); // 根据NVIC_InitStruct中指定的参数初始化外设NVIC寄存器
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 	
 	// 初始化串口1结构体
 	USART_InitStructure.USART_BaudRate = BaudRate; // 一般设置为9600
@@ -359,10 +341,32 @@ void COM_Init(u32 BaudRate)
 	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;// 无硬件数据流控制
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx; // 收发模式
 	USART_Init(USART1, &USART_InitStructure); // 初始化串口1
+
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+
+	//USART1的收发中断
+	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn; // 使能串口1中断
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; // 先占优先级2级
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1; // 从优先级2级
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; // 使能外部中断通道
+	NVIC_Init(&NVIC_InitStructure); // 根据NVIC_InitStruct中指定的参数初始化外设NVIC寄存器
+
+	//空闲中断接收
+	USART_ITConfig(USART1, USART_IT_TC, DISABLE);
+	USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
+	USART_ITConfig(USART1, USART_IT_ERR, ENABLE);
+	USART_ITConfig(USART1, USART_IT_IDLE, ENABLE);
+
+	// DMA1的串口1发送中断
+	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel4_IRQn; // 使能串口1中断
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; // 先占优先级2级
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2; // 从优先级2级
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; // 使能外部中断通道
+	NVIC_Init(&NVIC_InitStructure); // 根据NVIC_InitStruct中指定的参数初始化外设NVIC寄存器
 	
 	// 开启DMA时钟
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
-	
+
 	// DMA之串口1发送配置
 	DMA_DeInit(DMA1_Channel4);
 	DMA_InitStructure.DMA_PeripheralBaseAddr = (u32) &USART1->DR;
@@ -380,6 +384,9 @@ void COM_Init(u32 BaudRate)
 	DMA_Cmd(DMA1_Channel4, ENABLE);
 	DMA_ITConfig(DMA1_Channel4, DMA_IT_TC, ENABLE);
 	
+	// 开启DMA时钟
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+
 	// DMA之串口1接收配置
 	DMA_DeInit(DMA1_Channel5);
 	DMA_InitStructure.DMA_PeripheralBaseAddr = (u32) &USART1->DR;
@@ -395,13 +402,11 @@ void COM_Init(u32 BaudRate)
 	DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 	DMA_Init(DMA1_Channel5, &DMA_InitStructure);
 	DMA_Cmd(DMA1_Channel5, ENABLE);
-	DMA_ITConfig(DMA1_Channel5, DMA_IT_TC, ENABLE);
-
-	USART_ITConfig(USART1, USART_IT_IDLE, ENABLE);
-	USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
-	USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
 
 	USART_Cmd(USART1, ENABLE); // 使能串口
+
+	USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
+	USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
 	
 	{
 		u16 i, j;
@@ -415,7 +420,7 @@ void COM_Init(u32 BaudRate)
 		}
 	}
 
-	COM_SendString("\r\r\r\r\r\r\033[u\033[2J");
+	COM_SendString("\r\r\r\r\r\r");
 
 	LOGD("=============================================================\r\n");
 	LOGD("USART1 Started:\r\n");

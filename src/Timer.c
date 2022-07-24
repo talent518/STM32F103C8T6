@@ -1,8 +1,10 @@
 #include <stm32f10x_tim.h>
 
 #include "IWDG.h"
+#include "LED.h"
 #include "COM.h"
 #include "Timer.h"
+#include "RTC.h"
 
 vu32 milliseconds = 0;
 
@@ -24,11 +26,13 @@ void Timer3Init(u16 Period)
 	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure); // 根据TIM_TimeBaseInitStruct中指定的参数初始化TIMx的时间基数单位
 
 	TIM_ITConfig(TIM3, TIM_IT_Update | TIM_IT_Trigger, ENABLE);  //使能
+	
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
 
 	// 配置中断优先级
 	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;  //TIM3中断
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;  //先占优先级0级
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;  //从优先级3级
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;  //先占优先级0级
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;  //从优先级3级
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //IRQ通道被使能
 	NVIC_Init(&NVIC_InitStructure);  //根据NVIC_InitStruct中指定的参数初始化外设NVIC寄存器
 
@@ -37,7 +41,7 @@ void Timer3Init(u16 Period)
 
 void TIM3_IRQHandler(void)
 {
-	static u16 n = 0;
+	static u16 n = 0, alarm = 0;
 
 	if(TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)
 	{
@@ -50,7 +54,25 @@ void TIM3_IRQHandler(void)
 		if(++ n >= 100)
 		{
 			n = 0;
-			COM_printf("\033[2K%.1f\r", (float) milliseconds / 1000.0f);
+			
+			if(is_alarm) {
+				if(++alarm >= 100) {
+					is_alarm = 0;
+					alarm = 0;
+					LED_SetAlarm(0);
+				} else {
+					LED_SetAlarm(alarm % 2);
+				}
+			}
+			
+			COM_ClearLine = 0;
+			{
+				u32 sec1 = milliseconds / 100, sec2 = sec1 / 10, sec3 = sec1 % 10;
+				
+				RTC_Get(); // 更新时间
+				COM_printf("\033[2KSeconds: %u.%u, RTC: %u-%02u-%02u %02u:%02u:%02u.%03u\r", sec2, sec3, calendar.year, calendar.month, calendar.day, calendar.hour, calendar.min, calendar.sec, calendar.msec);
+			}
+			
 			COM_ClearLine = 1;
 		}
 		

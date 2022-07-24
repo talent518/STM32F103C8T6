@@ -31,15 +31,28 @@ u8 COM_SendData(u8* buf, u16 len);
  */
 void COM_printf(const char *format, ...) __attribute__ ((format(printf, 1, 2)));
 
-#define LOGE(fmt, args...) COM_printf("[E][%s:%d] " fmt, __func__, __LINE__, ##args)
-#define LOGW(fmt, args...) COM_printf("[W][%s:%d] " fmt, __func__, __LINE__, ##args)
-#define LOGD(fmt, args...) COM_printf("[D][%s:%d] " fmt, __func__, __LINE__, ##args)
-#define LOGI(fmt, args...) COM_printf("[I][%s:%d] " fmt, __func__, __LINE__, ##args)
-#define LOGV(fmt, args...) COM_printf("[V][%s:%d] " fmt, __func__, __LINE__, ##args)
+#ifndef LOG_LEVEL
+#define LOG_LEVEL 3
+#elif LOG_LEVEL < 0 || LOG_LEVEL > 5
+#undef LOG_LEVEL
+#define LOG_LEVEL 3
+#endif
+
+#define LOGX(prefix,level,fmt,args...) do { \
+	if(LOG_LEVEL >= level) COM_printf(prefix "[%s:%d] " fmt, __func__, __LINE__, ##args); \
+} while(0)
+
+#define LOGE(fmt, args...) LOGX("[E]", 1, fmt, ##args)
+#define LOGW(fmt, args...) LOGX("[W]", 2, fmt, ##args)
+#define LOGI(fmt, args...) LOGX("[I]", 3, fmt, ##args)
+#define LOGD(fmt, args...) LOGX("[D]", 4, fmt, ##args)
+#define LOGV(fmt, args...) LOGX("[V]", 5, fmt, ##args)
 
 void COM_RunCmd(void);
 void DMA_SendData(void);
 
 void cmd_help(char *argv[], u8 argc);
+void cmd_rtc(char *argv[], u8 argc);
+void cmd_alarm(char *argv[], u8 argc);
 
 #endif

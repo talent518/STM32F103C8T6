@@ -4,3 +4,5 @@
 /Project.uvoptx
 /DebugConfig
 /Listings
+package-lock.json
+node_modules/

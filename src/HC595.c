@@ -11,7 +11,7 @@ SCLK------------>PA2
 GND------------>½ÓµØ
 **************************/
 
-#define DELAY delay_us(1)
+#define DELAY delay_us(5)
 
 #define DIO_0 GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_RESET)
 #define DIO_1 GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_SET)
