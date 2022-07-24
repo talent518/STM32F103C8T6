@@ -21,6 +21,17 @@ const serialPort = new serial.SerialPort({
 	baudRate: config.baudRate,
 	autoOpen: false
 });
+const setAlarm = function() {
+	const d = new Date(new Date().getTime() + 50000);
+	serialPort.write('alarm ' + (d.getYear() + 1900) + ' ' + (d.getMonth() + 1) + ' ' + d.getDate() + ' ' + d.getHours() + ' ' + d.getMinutes() + ' ' + d.getSeconds() + '\r\n', function(e) {
+		if(e) {
+			console.error(e);
+			process.exit();
+		} else {
+			setTimeout(setAlarm, 60000); // 设置一分钟后的闹钟
+		}
+	});
+}
 
 serialPort.open(function(e) {
 	if(e) {
@@ -33,12 +44,7 @@ serialPort.open(function(e) {
 	serialPort.write('rtc ' + (d.getYear() + 1900) + ' ' + (d.getMonth() + 1) + ' ' + d.getDate() + ' ' + d.getHours() + ' ' + d.getMinutes() + ' ' + d.getSeconds() + '\r\n', function(e) {
 		if(e) console.error(e);
 	});
-	setInterval(function() {
-		const d2 = new Date();
-		serialPort.write('alarm ' + (d2.getYear() + 1900) + ' ' + (d2.getMonth() + 1) + ' ' + d2.getDate() + ' ' + d2.getHours() + ' ' + d2.getMinutes() + ' ' + d2.getSeconds() + '\r\n', function(e) {
-			if(e) console.error(e);
-		});
-	}, 60000); // 每分钟设置一次闹钟
+	setTimeout(setAlarm, 100); // 第一次0.1秒后设置1分钟后的闹钟
 });
 
 serialPort.on('data', function(data) {
