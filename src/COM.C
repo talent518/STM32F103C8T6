@@ -206,6 +206,30 @@ void COM_RunCmd(void)
  */
 void USART1_IRQHandler(void)
 {
+	if(USART_GetITStatus(USART1, USART_IT_NE) != RESET)
+	{
+		USART1->SR;USART1->DR; // 必须的，不然会导致IDLE中断清除不掉问题
+		USART_ClearITPendingBit(USART1, USART_IT_NE); // 清空闲标志位
+		LOGD("NE\r\n");
+	}
+	if(USART_GetITStatus(USART1, USART_IT_FE) != RESET)
+	{
+		USART1->SR;USART1->DR; // 必须的，不然会导致IDLE中断清除不掉问题
+		USART_ClearITPendingBit(USART1, USART_IT_FE); // 清空闲标志位
+		LOGD("FE\r\n");
+	}
+	if(USART_GetITStatus(USART1, USART_IT_PE) != RESET)
+	{
+		USART1->SR;USART1->DR; // 必须的，不然会导致IDLE中断清除不掉问题
+		USART_ClearITPendingBit(USART1, USART_IT_PE); // 清空闲标志位
+		LOGD("PE\r\n");
+	}
+	if(USART_GetITStatus(USART1, USART_IT_ORE) != RESET)
+	{
+		USART1->SR;USART1->DR; // 必须的，不然会导致IDLE中断清除不掉问题
+		USART_ClearITPendingBit(USART1, USART_IT_ORE); // 清空闲标志位
+		LOGD("ORE\r\n");
+	}
 	// 使用串口DMA空闲接收
 	if(USART_GetITStatus(USART1, USART_IT_IDLE) != RESET) // 接收中断
 	{
@@ -403,10 +427,11 @@ void COM_Init(u32 BaudRate)
 	DMA_Init(DMA1_Channel5, &DMA_InitStructure);
 	DMA_Cmd(DMA1_Channel5, ENABLE);
 
-	USART_Cmd(USART1, ENABLE); // 使能串口
-
 	USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
 	USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
+
+	USART_Cmd(USART1, ENABLE); // 使能串口
+	USART_ClearFlag( USART1, USART_FLAG_TC );
 	
 	{
 		u16 i, j;
@@ -420,7 +445,7 @@ void COM_Init(u32 BaudRate)
 		}
 	}
 
-	COM_SendString("\r\r\r\r\r\r");
+	COM_SendString("\r\r\r\r\r\r\033[2K");
 
 	LOGD("=============================================================\r\n");
 	LOGD("USART1 Started:\r\n");

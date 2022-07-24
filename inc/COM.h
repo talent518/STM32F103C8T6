@@ -32,10 +32,7 @@ u8 COM_SendData(u8* buf, u16 len);
 void COM_printf(const char *format, ...) __attribute__ ((format(printf, 1, 2)));
 
 #ifndef LOG_LEVEL
-#define LOG_LEVEL 3
-#elif LOG_LEVEL < 0 || LOG_LEVEL > 5
-#undef LOG_LEVEL
-#define LOG_LEVEL 3
+#define LOG_LEVEL 4
 #endif
 
 #define LOGX(prefix,level,fmt,args...) do { \
