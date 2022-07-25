@@ -11,7 +11,7 @@ SCLK------------>PA2
 GND------------>接地
 **************************/
 
-#define DELAY delay_us(5)
+#define DELAY delay_us(10)
 
 #define DIO_0 GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_RESET)
 #define DIO_1 GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_SET)
@@ -28,7 +28,7 @@ unsigned int segs[] = {
 };
 //创建一个数组，0-9所对应的十六进制数
 
-void HC595_GPIO_Init(void)
+void HC595_Init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -85,23 +85,25 @@ void HC595_Send_Data(unsigned char num, unsigned char show_bit)
 
 void display(unsigned int n)
 {
-	static unsigned char num[4] = {10, 10, 10, 10};
-	int i, j;
+	u8 i, j;
 	
 	for(i = 0; i < 4; i ++)
 	{
 		if(i && n == 0)
 		{
-			HC595_Send_Data(0xff, i);
+			j = 0xff;
 		}
 		else if(i == 1)
 		{
-			HC595_Send_Data(segs[n % 10 + 10], i);
+			j = segs[n % 10 + 10];
 		}
 		else
 		{
-			HC595_Send_Data(segs[n % 10], i);
+			j = segs[n % 10];
 		}
+		
+		HC595_Send_Data(j, i);
+		
 		n /= 10;
 	}
 }

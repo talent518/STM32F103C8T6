@@ -5,6 +5,7 @@
 #include "COM.h"
 #include "Timer.h"
 #include "RTC.h"
+#include "KEY.h"
 
 vu32 milliseconds = 0;
 
@@ -39,6 +40,7 @@ void Timer3Init(u16 Period)
 	TIM_Cmd(TIM3, ENABLE);  //使能TIMx外设
 }
 
+static const char *weeks[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 void TIM3_IRQHandler(void)
 {
 	static u16 n = 0, alarm = 0;
@@ -47,6 +49,7 @@ void TIM3_IRQHandler(void)
 	{
 		TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 		
+		LED_SetUsage(1);
 		milliseconds ++;
 		
 		COM_RunCmd();
@@ -70,7 +73,7 @@ void TIM3_IRQHandler(void)
 				u32 sec1 = milliseconds / 100, sec2 = sec1 / 10, sec3 = sec1 % 10;
 				
 				RTC_Get(); // 更新时间
-				COM_printf("\033[2KSeconds: %u.%u, RTC: %u-%02u-%02u %02u:%02u:%02u.%03u\r", sec2, sec3, calendar.year, calendar.month, calendar.day, calendar.hour, calendar.min, calendar.sec, calendar.msec);
+				COM_printf("\033[2KSeconds: %u.%u, RTC: %u-%02u-%02u %s %02u:%02u:%02u.%03u\r", sec2, sec3, calendar.year, calendar.month, calendar.day, weeks[calendar.week], calendar.hour, calendar.min, calendar.sec, calendar.msec);
 			}
 			
 			COM_ClearLine = 1;
@@ -79,5 +82,6 @@ void TIM3_IRQHandler(void)
 		DMA_SendData();
 
 		IWDG_FeedDog();
+		LED_SetUsage(0);
 	}
 }

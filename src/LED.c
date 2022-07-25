@@ -10,15 +10,19 @@ void LED_Init(void) {
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; // 开漏输出
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; // 速率50M
 	
+	// Usage Status
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+	
 	// Alarm Status
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	
 	LED_SetAlarm(0);
 }
 
-void LED_SetHC595(u8 onoff) {
-	GPIO_WriteBit(GPIOB, GPIO_Pin_9, onoff == 0);
+void LED_SetUsage(u8 onoff) {
+	GPIO_WriteBit(GPIOB, GPIO_Pin_9, onoff);
 }
 
 void LED_SetAlarm(u8 onoff) {

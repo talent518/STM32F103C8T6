@@ -424,6 +424,16 @@
               <FileType>1</FileType>
               <FilePath>.\src\LED.c</FilePath>
             </File>
+            <File>
+              <FileName>TM1638.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\TM1638.c</FilePath>
+            </File>
+            <File>
+              <FileName>KEY.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\KEY.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
