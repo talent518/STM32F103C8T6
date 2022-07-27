@@ -11,7 +11,7 @@ SCLK------------>PA2
 GND------------>½ÓµØ
 **************************/
 
-#define DELAY delay_us(10)
+#define DELAY delay_us(1)
 
 #define DIO_0 GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_RESET)
 #define DIO_1 GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_SET)
@@ -85,25 +85,30 @@ void HC595_Send_Data(unsigned char num, unsigned char show_bit)
 
 void display(unsigned int n)
 {
+	static u8 dexs[4] = {0xff, 0xff, 0xff, 0xff}, idex = 0;
+	
 	u8 i, j;
 	
-	for(i = 0; i < 4; i ++)
+	HC595_Send_Data(dexs[idex], idex);
+	if(++ idex >= 4)
 	{
-		if(i && n == 0)
+		idex = 0;
+		for(i = 0; i < 4; i ++)
 		{
-			j = 0xff;
+			if(i && n == 0)
+			{
+				dexs[i] = 0xff;
+			}
+			else if(i == 1)
+			{
+				dexs[i] = segs[n % 10 + 10];
+			}
+			else
+			{
+				dexs[i] = segs[n % 10];
+			}
+
+			n /= 10;
 		}
-		else if(i == 1)
-		{
-			j = segs[n % 10 + 10];
-		}
-		else
-		{
-			j = segs[n % 10];
-		}
-		
-		HC595_Send_Data(j, i);
-		
-		n /= 10;
 	}
 }
