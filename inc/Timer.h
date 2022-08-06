@@ -5,6 +5,6 @@
 
 extern vu32 milliseconds;
 
-void Timer3Init(u16 Period);
+void Timer_Init(u16 Period);
 
 #endif

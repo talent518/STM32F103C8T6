@@ -434,6 +434,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\KEY.c</FilePath>
             </File>
+            <File>
+              <FileName>PWM.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\PWM.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

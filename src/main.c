@@ -6,6 +6,7 @@
 #include "KEY.h"
 #include "IWDG.h"
 #include "Timer.h"
+#include "PWM.h"
 
 //主机端程序
 int main(void)
@@ -17,7 +18,12 @@ int main(void)
 	HC595_Init();
 	KEY_Init();
 	IWDG_Init(); // 窗口看门狗初始化函数
-	Timer3Init(1000-1); // 设置1ms计时器
+	Timer_Init(1000-1); // 设置1ms计时器
+	PWM_Init(200, 36-1);
+	PWM_CH1(40);
+	PWM_CH2(160);
+	PWM_CH3(80);
+	PWM_CH4(120);
 	
 	COM_SetStatus(1);
 
