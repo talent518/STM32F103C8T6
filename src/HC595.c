@@ -2,6 +2,7 @@
 
 #include "HC595.h"
 #include "SysTick.h"
+#include "RTC.h"
 
 /************************
 VCC------------>¹©µç
@@ -85,7 +86,8 @@ void HC595_Send_Data(unsigned char num, unsigned char show_bit)
 
 void display(unsigned int n)
 {
-	static u8 dexs[4] = {0xff, 0xff, 0xff, 0xff}, idex = 0;
+	static u8 dexs[4] = {0xff, 0xff, 0xff, 0xff}, idex = 0, type = 0xfe;
+	static unsigned int t = 0xffffffff;
 	
 	u8 i, j;
 	
@@ -93,22 +95,58 @@ void display(unsigned int n)
 	if(++ idex >= 4)
 	{
 		idex = 0;
-		for(i = 0; i < 4; i ++)
+		
+		if(t != n)
 		{
-			if(i && n == 0)
+			t = n;
+			
+			if(n % 50 == 0)
 			{
-				dexs[i] = 0xff;
+				type ++;
+				if(type >= 4)
+				{
+					type = 0;
+				}
 			}
-			else if(i == 1)
+			
+			switch(type)
 			{
-				dexs[i] = segs[n % 10 + 10];
+				case 0: // RTC sec.msec
+					i = 0;
+					j = calendar.msec / 10;
+					dexs[i++] = segs[j % 10];
+					dexs[i++] = segs[j / 10];
+					j = calendar.sec;
+					dexs[i++] = segs[j % 10 + 10];
+					dexs[i++] = segs[j / 10];
+					break;
+				case 1: // RTC hour.min
+					i = 0;
+					j = calendar.min;
+					dexs[i++] = segs[j % 10];
+					dexs[i++] = segs[j / 10];
+					j = calendar.hour;
+					dexs[i++] = segs[j % 10 + 10];
+					dexs[i++] = segs[j / 10];
+					break;
+				case 2: // RTC month.day
+					i = 0;
+					j = calendar.day;
+					dexs[i++] = segs[j % 10];
+					dexs[i++] = segs[j / 10];
+					j = calendar.month;
+					dexs[i++] = segs[j % 10];
+					dexs[i++] = segs[j / 10];
+					break;
+				case 3: // RTC year.week
+					i = 0;
+					dexs[i++] = segs[calendar.week];
+					dexs[i++] = 0xff;
+					j = calendar.year % 100;
+					dexs[i++] = segs[j % 10];
+					dexs[i++] = segs[j / 10];
+					break;
 			}
-			else
-			{
-				dexs[i] = segs[n % 10];
-			}
-
-			n /= 10;
 		}
 	}
 }

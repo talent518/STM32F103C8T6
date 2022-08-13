@@ -1,6 +1,7 @@
 #include <stm32f10x_gpio.h>
 
-#include "TM1638.h"  //tm1638模块实现头文件
+#include "TM1638.h"
+#include "SysTick.h"
 
 #define TM1638_RCC RCC_APB2Periph_GPIOA
 #define TM1638_GPIO GPIOA
@@ -9,34 +10,27 @@
 #define TM1638_DIO GPIO_Pin_3
 
 //引脚高低电平设置
-#define STB_0() ResetBits(TM1638_GPIO, TM1638_STB)
-#define STB_1() SetBits(TM1638_GPIO, TM1638_STB)
+#define STB_0() GPIO_ResetBits(TM1638_GPIO, TM1638_STB)
+#define STB_1() GPIO_SetBits(TM1638_GPIO, TM1638_STB)
 
 #define CLK_0() ResetBits(TM1638_GPIO, TM1638_CLK)
 #define CLK_1() SetBits(TM1638_GPIO, TM1638_CLK)
 
-#define DIO_0() ResetBits(TM1638_GPIO, TM1638_DIO)
-#define DIO_1() SetBits(TM1638_GPIO, TM1638_DIO)
+#define DIO_0() GPIO_ResetBits(TM1638_GPIO, TM1638_DIO)
+#define DIO_1() GPIO_SetBits(TM1638_GPIO, TM1638_DIO)
 
 // 读引脚高低电平
 #define DIO_Read() GPIO_ReadInputDataBit(TM1638_GPIO, TM1638_DIO)
 
-#if 0
-	#define ResetBits(args...) GPIO_ResetBits(args)
-	#define SetBits(args...) GPIO_SetBits(args)
-#else
-	#include "SysTick.h"
-	
-	static void ResetBits(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin) {
-		GPIO_ResetBits(GPIOx, GPIO_Pin);
-		delay_us(10);
-	}
+static void ResetBits(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin) {
+	GPIO_ResetBits(GPIOx, GPIO_Pin);
+	delay_us(5);
+}
 
-	static void SetBits(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin) {
-		GPIO_SetBits(GPIOx, GPIO_Pin);
-		delay_us(10);
-	}
-#endif
+static void SetBits(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin) {
+	GPIO_SetBits(GPIOx, GPIO_Pin);
+	delay_us(5);
+}
 
 static u8 TM1638_Arr_SEG[] = {
 	0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, //共阴极数码管段码，不带小数点

@@ -85,15 +85,12 @@ void KEY_Display(void) {
 	if(key < 4) {
 		i = ((32767 - RTC_GetDivider()) * 1000 / 32767) / 125;
 		if(key % 2) i = 7 - i;
-		if(key < 2) {
-			if(i != led) {
+		if(i != led) {
+			if(key < 2) {
 				TM1638_Display_LED(led, OFF);
 				led = i;
 				TM1638_Display_LED(i, ON);
-			}
-		} else {
-			if(i != led) {
-				led = i;
+			} else {
 				TM1638_Display_LED(i, knot);
 				if(key == 3) {
 					if(i == 0) knot = !knot;
@@ -101,6 +98,7 @@ void KEY_Display(void) {
 					if(i == 7) knot = !knot;
 				}
 			}
+			led = i;
 		}
 	}
 }

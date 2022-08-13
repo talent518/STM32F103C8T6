@@ -11,6 +11,7 @@
 //Ö÷»ú¶Ë³ÌÐò
 int main(void)
 {
+	u32 msec, msec1 = 0, msec2;
 	SysTick_Init(72);
 	LED_Init();
 	RTC_Init();
@@ -29,7 +30,13 @@ int main(void)
 
 	while(1)
 	{
-		display((milliseconds / 100) % 10000);
-		KEY_Display();
+		msec = milliseconds;
+		display((msec / 100) % 10000);
+		msec2 = msec / 20;
+		if(msec1 != msec2)
+		{
+			msec1 = msec2;
+			KEY_Display();
+		}
 	}
 }
