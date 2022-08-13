@@ -71,8 +71,7 @@ int main(void)
 					{
 						is_alarm = 0;
 						alarm = 0;
-						n2 = 0;
-						LED_SetAlarm(1);
+						LED_SetAlarm(0);
 					}
 					else
 					{
