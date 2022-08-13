@@ -11,8 +11,7 @@
 
 #include "main.h"
 
-vs16 adc_temp = 0;
-__IO float adc_vref = 0.0f, adc_voltage1 = 0.0f, adc_voltage2 = 0.0f;
+__IO float adc_temp = 0.0f, adc_vref = 0.0f, adc_voltage1 = 0.0f, adc_voltage2 = 0.0f;
 
 //Ö÷»ú¶Ë³ÌÐò
 int main(void)
@@ -111,7 +110,7 @@ int main(void)
 			{
 				COM_ClearLine = 0;
 				{
-					COM_printf("\033[2KRTC: %u-%02u-%02u %s %02u:%02u:%02u, Temp: %uC, Vref: %.3fV, Voltage1: %.3fV, Voltage2: %.3fV\r", calendar.year, calendar.month, calendar.day, weeks[calendar.week], calendar.hour, calendar.min, calendar.sec, adc_temp, adc_vref, adc_voltage1, adc_voltage2);
+					COM_printf("\033[2KRTC: %u-%02u-%02u %s %02u:%02u:%02u, Temp: %.1fC, Vref: %.3fV, Voltage1: %.3fV, Voltage2: %.3fV\r", calendar.year, calendar.month, calendar.day, weeks[calendar.week], calendar.hour, calendar.min, calendar.sec, adc_temp, adc_vref, adc_voltage1, adc_voltage2);
 				}
 				
 				COM_ClearLine = 1;

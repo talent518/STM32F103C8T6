@@ -35,7 +35,7 @@ static void _ADC_Init(void)
 	GPIO_InitTypeDef GPIO_InitStructure;
 	
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB |RCC_APB2Periph_ADC1 | RCC_APB2Periph_AFIO, ENABLE ); // 使能ADC1通道时钟
-	RCC_ADCCLKConfig(RCC_PCLK2_Div6); // 设置ADC分频因子6 72M/6=12,ADC最大时间不能超过14M
+	RCC_ADCCLKConfig(RCC_PCLK2_Div8); // 设置ADC分频因子6 72M/8=9,ADC最大时间不能超过14M
 	
 	//PB0,PB1 作为模拟通道输入引脚
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;

@@ -3,7 +3,6 @@
 
 #include <stm32f10x.h>
 
-extern vs16 adc_temp;
-extern __IO float adc_vref, adc_voltage1, adc_voltage2;
+extern __IO float adc_temp, adc_vref, adc_voltage1, adc_voltage2;
 
 #endif
