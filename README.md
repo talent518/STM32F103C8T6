@@ -30,6 +30,3 @@ STM32F103C8T6
 * ADC: 模数转换输入
   * Channel8: B0
   * Channel9: B1
-
-* DAC: 数模转换输出
-  * Channel1: C13, 输出2.5V
