@@ -1,13 +1,6 @@
 #include <stm32f10x_tim.h>
 
-#include "IWDG.h"
-#include "LED.h"
-#include "COM.h"
 #include "Timer.h"
-#include "RTC.h"
-#include "KEY.h"
-#include "ADC.h"
-#include "main.h"
 
 vu32 milliseconds = 0;
 

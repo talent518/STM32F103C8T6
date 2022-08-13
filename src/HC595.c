@@ -104,7 +104,7 @@ void display(unsigned int n)
 			if(n % 50 == 0)
 			{
 				type ++;
-				if(type >= 8)
+				if(type >= 14)
 				{
 					type = 0;
 				}
@@ -112,7 +112,22 @@ void display(unsigned int n)
 			
 			switch(type)
 			{
-				case 0: // RTC sec.msec
+				case 0:
+				case 2:
+				case 4:
+				case 6:
+				case 8:
+				case 10:
+				case 12: // RTC hour.min
+					i = 0;
+					j = calendar.min;
+					dexs[i++] = segs[j % 10];
+					dexs[i++] = segs[j / 10];
+					j = calendar.hour;
+					dexs[i++] = segs[j % 10 + (n % 10 < 5 ? 10 : 0)];
+					dexs[i++] = segs[j / 10];
+					break;
+				case 1: // RTC sec.msec
 					i = 0;
 					j = calendar.msec / 10;
 					dexs[i++] = segs[j % 10];
@@ -121,16 +136,7 @@ void display(unsigned int n)
 					dexs[i++] = segs[j % 10 + 10];
 					dexs[i++] = segs[j / 10];
 					break;
-				case 1: // RTC hour.min
-					i = 0;
-					j = calendar.min;
-					dexs[i++] = segs[j % 10];
-					dexs[i++] = segs[j / 10];
-					j = calendar.hour;
-					dexs[i++] = segs[j % 10 + 10];
-					dexs[i++] = segs[j / 10];
-					break;
-				case 2: // RTC month.day
+				case 3: // RTC month.day
 					i = 0;
 					j = calendar.day;
 					dexs[i++] = segs[j % 10];
@@ -139,7 +145,7 @@ void display(unsigned int n)
 					dexs[i++] = segs[j % 10];
 					dexs[i++] = segs[j / 10];
 					break;
-				case 3: // RTC year.week
+				case 5: // RTC year.week
 					i = 0;
 					dexs[i++] = segs[calendar.week];
 					dexs[i++] = 0xff;
@@ -147,7 +153,7 @@ void display(unsigned int n)
 					dexs[i++] = segs[j % 10];
 					dexs[i++] = segs[j / 10];
 					break;
-				case 4: // ADC Temp
+				case 7: // ADC Temp
 					n = adc_temp > 0 ? adc_temp : - adc_temp;
 					dexs[0] = 0xc6;
 					for(i = 1; i < 3; i ++)
@@ -162,7 +168,7 @@ void display(unsigned int n)
 					}
 					dexs[3] = adc_temp > 0 ? 0xff : 0xbf;
 					break;
-				case 5: // ADC Vref
+				case 9: // ADC Vref
 					n = adc_vref * 100;
 					dexs[0] = 0xc1;
 					for(i = 1; i < 4; i ++)
@@ -171,7 +177,7 @@ void display(unsigned int n)
 						n /= 10;
 					}
 					break;
-				case 6: // ADC Voltage1
+				case 11: // ADC Voltage1
 					n = adc_voltage1 * 100;
 					dexs[0] = 0xc1;
 					for(i = 1; i < 4; i ++)
@@ -180,7 +186,7 @@ void display(unsigned int n)
 						n /= 10;
 					}
 					break;
-				case 7: // ADC Voltage2
+				case 13: // ADC Voltage2
 					n = adc_voltage2 * 100;
 					dexs[0] = 0xc1;
 					for(i = 1; i < 4; i ++)

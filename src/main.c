@@ -17,7 +17,8 @@ __IO float adc_vref = 0.0f, adc_voltage1 = 0.0f, adc_voltage2 = 0.0f;
 //主机端程序
 int main(void)
 {
-	u16 n = 0, alarm = 0;
+	s8 flag = 1;
+	u16 n = 0, alarm = 0, n2 = 0, pwm = 0;
 	u32 msec, msec1 = 0;
 	const char *weeks[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 	
@@ -30,9 +31,9 @@ int main(void)
 	ADC1_Init();
 	IWDG_Init(); // 窗口看门狗初始化函数
 	Timer_Init(1000-1); // 设置1ms计时器
-	PWM_Init(200, 36-1);
-	PWM_CH1(40);
-	PWM_CH2(160);
+	PWM_Init(200, 9-1);
+	PWM_CH1(pwm);
+	PWM_CH2(200 - pwm);
 	
 	COM_SetStatus(1);
 
@@ -64,15 +65,40 @@ int main(void)
 			
 			if(n % 100 == 0)
 			{
-				if(is_alarm) {
-					if(++alarm >= 100) {
+				if(is_alarm)
+				{
+					if(++alarm >= 100)
+					{
 						is_alarm = 0;
 						alarm = 0;
-						LED_SetAlarm(0);
-					} else {
+						n2 = 0;
+						LED_SetAlarm(1);
+					}
+					else
+					{
 						LED_SetAlarm(alarm % 2);
 					}
 				}
+				else
+				{
+					if(++n2 >= 50)
+					{
+						n2 = 0;
+						LED_SetAlarm(1);
+					}
+					else if(n2 == 5)
+					{
+						LED_SetAlarm(0);
+					}
+				}
+				
+				pwm += flag;
+				if(pwm == 0 || pwm == 90)
+				{
+					flag = -flag;
+				}
+				PWM_CH1(pwm + 5);
+				PWM_CH2(200 - pwm - 5);
 				
 				adc_temp = ADC_GetTemp();
 				adc_vref = ADC_GetVref();
