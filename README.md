@@ -1,2 +1,35 @@
 # STM32F103C8T6
 STM32F103C8T6
+
+### GPIO口定义
+
+* USART1: 串口1
+  * TX: A9
+  * RX: A10
+
+* PWM-TIM3: 4通道脉宽调制
+  * Channel1: A6
+  * Channel2: A7
+
+* TIM2: 每秒一次的计时器
+
+* LED: 指示灯
+  * 闹钟: B8
+  * TIM2计时器占空比: B9
+
+* HC595: 4位共阳极数码管
+  * DIO: A0
+  * RCLK: A1
+  * SCLK: A2
+
+* TM1638: 8位数码管显示、8个LED显示、8个按键输入
+  * STB: A5
+  * CLK: A4
+  * DIO: A3
+
+* ADC: 模数转换输入
+  * Channel8: B0
+  * Channel9: B1
+
+* DAC: 数模转换输出
+  * Channel1: C13, 输出2.5V

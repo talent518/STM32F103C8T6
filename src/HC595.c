@@ -3,6 +3,7 @@
 #include "HC595.h"
 #include "SysTick.h"
 #include "RTC.h"
+#include "main.h"
 
 /************************
 VCC------------>¹©µç
@@ -103,7 +104,7 @@ void display(unsigned int n)
 			if(n % 50 == 0)
 			{
 				type ++;
-				if(type >= 4)
+				if(type >= 8)
 				{
 					type = 0;
 				}
@@ -145,6 +146,48 @@ void display(unsigned int n)
 					j = calendar.year % 100;
 					dexs[i++] = segs[j % 10];
 					dexs[i++] = segs[j / 10];
+					break;
+				case 4: // ADC Temp
+					n = adc_temp > 0 ? adc_temp : - adc_temp;
+					dexs[0] = 0xc6;
+					for(i = 1; i < 3; i ++)
+					{
+						if(i && n == 0)
+						{
+							dexs[i] = 0xff;
+						} else {
+							dexs[i] = segs[n % 10];
+							n /= 10;
+						}
+					}
+					dexs[3] = adc_temp > 0 ? 0xff : 0xbf;
+					break;
+				case 5: // ADC Vref
+					n = adc_vref * 100;
+					dexs[0] = 0xc1;
+					for(i = 1; i < 4; i ++)
+					{
+						dexs[i] = segs[n % 10 + (i == 3 ? 10 : 0)];
+						n /= 10;
+					}
+					break;
+				case 6: // ADC Voltage1
+					n = adc_voltage1 * 100;
+					dexs[0] = 0xc1;
+					for(i = 1; i < 4; i ++)
+					{
+						dexs[i] = segs[n % 10 + (i == 3 ? 10 : 0)];
+						n /= 10;
+					}
+					break;
+				case 7: // ADC Voltage2
+					n = adc_voltage2 * 100;
+					dexs[0] = 0xc1;
+					for(i = 1; i < 4; i ++)
+					{
+						dexs[i] = segs[n % 10 + (i == 3 ? 10 : 0)];
+						n /= 10;
+					}
 					break;
 			}
 		}

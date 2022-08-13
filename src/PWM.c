@@ -13,7 +13,7 @@ void PWM_Init(u16 arr, u16 psc)
 	TIM_OCInitTypeDef TIM_OCInitStructure;
 	
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE); // 使能定时器3时钟
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE); // 使能GPIO外设和AFIO复用功能模块时钟
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_AFIO, ENABLE); // 使能GPIO外设和AFIO复用功能模块时钟
 	
 	// 初始化GPIO
 	
@@ -25,12 +25,6 @@ void PWM_Init(u16 arr, u16 psc)
 	
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7; // TIM_CH2
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0; // TIM_CH3
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-	
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1; // TIM_CH4
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	
 	// 初始化TIM3
 	TIM_TimeBaseStructure.TIM_Period = arr; // 设置在下一个更新事件装入活动的自动重装载寄存器周期的值
@@ -53,14 +47,6 @@ void PWM_Init(u16 arr, u16 psc)
 	TIM_OC2Init(TIM3, &TIM_OCInitStructure); // 根据T指定的参数初始化外设TIM3 OC2
 	TIM_OC2PreloadConfig(TIM3, TIM_OCPreload_Enable); // 使能TIM3在CCR1上的预装载寄存器
 	
-	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low; // 输出极性:TIM输出比较极性低
-	TIM_OC3Init(TIM3, &TIM_OCInitStructure); // 根据T指定的参数初始化外设TIM3 OC3
-	TIM_OC3PreloadConfig(TIM3, TIM_OCPreload_Enable); // 使能TIM3在CCR1上的预装载寄存器
-	
-	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High; // 输出极性:TIM输出比较极性高
-	TIM_OC4Init(TIM3, &TIM_OCInitStructure); // 根据T指定的参数初始化外设TIM3 OC4
-	TIM_OC4PreloadConfig(TIM3, TIM_OCPreload_Enable); // 使能TIM3在CCR1上的预装载寄存器
-	
 	// 使能TIM3
 	TIM_Cmd(TIM3, ENABLE);
 }
@@ -75,14 +61,4 @@ void PWM_CH1(u16 ccr)
 void PWM_CH2(u16 ccr)
 {
 	TIM_SetCompare2(TIM3, ccr); // 设置占空比
-}
-
-void PWM_CH3(u16 ccr)
-{
-	TIM_SetCompare3(TIM3, ccr); // 设置占空比
-}
-
-void PWM_CH4(u16 ccr)
-{
-	TIM_SetCompare4(TIM3, ccr); // 设置占空比
 }
