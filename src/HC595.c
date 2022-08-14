@@ -3,6 +3,7 @@
 #include "HC595.h"
 #include "SysTick.h"
 #include "RTC.h"
+#include "LED.h"
 #include "main.h"
 
 /************************
@@ -85,7 +86,7 @@ void HC595_Send_Data(unsigned char num, unsigned char show_bit)
 	DELAY;
 }
 
-void display(unsigned int n)
+void HC595_Display(unsigned int n)
 {
 	static u8 dexs[4] = {0xff, 0xff, 0xff, 0xff}, idex = 0, type = 0xfe;
 	static unsigned int t = 0xffffffff;
@@ -101,12 +102,24 @@ void display(unsigned int n)
 		{
 			t = n;
 			
-			if(n % 50 == 0)
+			n %= 50;
+			if(n == 0)
 			{
 				type ++;
 				if(type >= 14)
 				{
 					type = 0;
+				}
+			}
+			if(is_alarm == 0)
+			{
+				if(n == 0)
+				{
+					LED_SetAlarm(1);
+				}
+				else if(n == 5)
+				{
+					LED_SetAlarm(0);
 				}
 			}
 			

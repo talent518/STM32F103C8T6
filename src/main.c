@@ -46,7 +46,7 @@ int main(void)
 			
 			LED_SetUsage(1);
 			
-			display((msec / 100) % 10000);
+			HC595_Display(msec / 100);
 			
 			n ++;
 			
@@ -54,7 +54,7 @@ int main(void)
 			{
 				n = 0;
 			}
-
+			
 			if(n % 20 == 0)
 			{
 				KEY_Display();
@@ -75,18 +75,6 @@ int main(void)
 					else
 					{
 						LED_SetAlarm(alarm % 2);
-					}
-				}
-				else
-				{
-					if(++n2 >= 50)
-					{
-						n2 = 0;
-						LED_SetAlarm(1);
-					}
-					else if(n2 == 5)
-					{
-						LED_SetAlarm(0);
 					}
 				}
 				
@@ -117,7 +105,7 @@ int main(void)
 			}
 			
 			DMA_SendData();
-
+			
 			IWDG_FeedDog();
 			LED_SetUsage(0);
 		}
