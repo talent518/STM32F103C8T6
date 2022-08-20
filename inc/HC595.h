@@ -1,9 +1,9 @@
 #ifndef _HC595_H
 #define _HC595_H
 
+#include <stm32f10x.h>
+
 void HC595_Init(void);
-void HC595_Send_Data(unsigned char num, unsigned char show_bit);
-void HC595_Send_Byte(unsigned char byte);
-void HC595_Display(unsigned int n);
+void HC595_Display(u32 u);
 
 #endif

@@ -17,7 +17,7 @@ __IO float adc_temp = 0.0f, adc_vref = 0.0f, adc_voltage1 = 0.0f, adc_voltage2 =
 int main(void)
 {
 	s8 flag = 1;
-	u16 n = 0, alarm = 0, n2 = 0, pwm = 0;
+	u16 n = 0, alarm = 0, pwm = 0;
 	u32 msec, msec1 = 0;
 	const char *weeks[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 	
@@ -35,7 +35,7 @@ int main(void)
 	PWM_CH2(200 - pwm);
 	
 	COM_SetStatus(1);
-
+	
 	while(1)
 	{
 		msec = milliseconds;

@@ -16,99 +16,195 @@ GND------------>接地
 
 #define DELAY delay_us(1)
 
-#define DIO_0 GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_RESET)
-#define DIO_1 GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_SET)
+#define DIO1_0 GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_RESET)
+#define DIO1_1 GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_SET)
+#define DIO2_0 GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_RESET)
+#define DIO2_1 GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET)
 
-#define RCLK_0 GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_RESET)
-#define RCLK_1 GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_SET)
+#define RCLK1_0 GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_RESET)
+#define RCLK1_1 GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_SET)
+#define RCLK2_0 GPIO_WriteBit(GPIOB, GPIO_Pin_6, Bit_RESET)
+#define RCLK2_1 GPIO_WriteBit(GPIOB, GPIO_Pin_6, Bit_SET)
 
-#define SCLK_0 GPIO_WriteBit(GPIOA, GPIO_Pin_2, Bit_RESET)
-#define SCLK_1 GPIO_WriteBit(GPIOA, GPIO_Pin_2, Bit_SET)
-
-unsigned int segs[] = {
-	0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8, 0x80, 0x90,
-	0x40, 0x79, 0x24, 0x30, 0x19, 0x12, 0x02, 0x78, 0x00, 0x10,
-};
-//创建一个数组，0-9所对应的十六进制数
+#define SCLK1_0 GPIO_WriteBit(GPIOA, GPIO_Pin_2, Bit_RESET)
+#define SCLK1_1 GPIO_WriteBit(GPIOA, GPIO_Pin_2, Bit_SET)
+#define SCLK2_0 GPIO_WriteBit(GPIOB, GPIO_Pin_7, Bit_RESET)
+#define SCLK2_1 GPIO_WriteBit(GPIOB, GPIO_Pin_7, Bit_SET)
 
 void HC595_Init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
 
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB, ENABLE);
 	
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	
-	DIO_0;
-	RCLK_0;
-	SCLK_0;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+	
+	DIO1_0;
+	RCLK1_0;
+	SCLK1_0;
+	
+	DIO2_0;
+	RCLK2_0;
+	SCLK2_0;
 }
 
-/*********************************
-参数：byte 所传入的数据，
-  			是要显示的数字或者是对应显示的位数
-**********************************/
-void HC595_Send_Byte(unsigned char byte)
+static void HC595_SendByte1(u8 byte)
 {
-	unsigned int i;
+	u8 i;
 	
 	for(i = 0; i < 8; i++)
 	{
 		if(byte & 0x80)
-			DIO_1;
+			DIO1_1;
 		else
-			DIO_0;
+			DIO1_0;
 		
-		SCLK_0;
+		SCLK1_0;
 		DELAY;
-		SCLK_1;
+		SCLK1_1;
 		DELAY;
 		
 		byte <<= 1;
 	}
 }
 
-/*********************************
-参数：num 所要显示的数字，
-	show_bit 所显示的位数
-**********************************/
-void HC595_Send_Data(unsigned char num, unsigned char show_bit)
+static void HC595_Display1(u8 num, u8 index)
 {
-	HC595_Send_Byte(num);
-	HC595_Send_Byte(1 << show_bit);  
+	HC595_SendByte1(num);
+	HC595_SendByte1(1 << index);
 	
-	RCLK_0;
+	RCLK1_0;
 	DELAY;
-	RCLK_1;
+	RCLK1_1;
 	DELAY;
 }
 
-void HC595_Display(unsigned int n)
+static void HC595_SendByte2(u8 byte)
 {
-	static u8 dexs[4] = {0xff, 0xff, 0xff, 0xff}, idex = 0, type = 0xfe;
-	static unsigned int t = 0xffffffff;
+	u8 i;
+	
+	for(i = 0; i < 8; i++)
+	{
+		if(byte & 0x80)
+			DIO2_1;
+		else
+			DIO2_0;
+		
+		SCLK2_0;
+		DELAY;
+		SCLK2_1;
+		DELAY;
+		
+		byte <<= 1;
+	}
+}
+
+static void HC595_Display2(u8 num, u8 index)
+{
+	HC595_SendByte2(num);
+	HC595_SendByte2(1 << index);
+	
+	RCLK2_0;
+	DELAY;
+	RCLK2_1;
+	DELAY;
+}
+
+
+static __I u8 segs[] = {
+	0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8, 0x80, 0x90,
+	0x40, 0x79, 0x24, 0x30, 0x19, 0x12, 0x02, 0x78, 0x00, 0x10,
+};
+//创建一个数组，0-9所对应的十六进制数
+
+void HC595_Display(u32 t0)
+{
+	static u8 dexs1[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, idex1 = 0, type1 = 0xfe;
+	static u32 t1 = 0xffffffff;
+	
+	static u8 dexs2[4] = {0xff, 0xff, 0xff, 0xff}, idex2 = 0, type2 = 0xfe;
+	static u32 t2 = 0xffffffff;
 	
 	u8 i, j;
+	u32 n;
 	
-	HC595_Send_Data(dexs[idex], idex);
-	if(++ idex >= 4)
+	HC595_Display1(dexs1[idex1], idex1);
+	HC595_Display2(dexs2[idex2], idex2);
+	
+	if(++ idex1 >= 8)
 	{
-		idex = 0;
+		idex1 = 0;
 		
-		if(t != n)
+		if(t1 != t0)
 		{
-			t = n;
+			t1 = t0;
 			
-			n %= 50;
+			if(t0 % 50 == 0)
+			{
+				type1 ++;
+				if(type1 >= 2)
+				{
+					type1 = 0;
+				}
+			}
+			
+			switch(type1)
+			{
+				case 0: // RTC hour:min:sec.msec
+					i = 0;
+					j = calendar.msec / 10;
+					dexs1[i++] = segs[j % 10];
+					dexs1[i++] = segs[j / 10];
+					j = calendar.sec;
+					dexs1[i++] = segs[j % 10 + 10];
+					dexs1[i++] = segs[j / 10];
+					j = calendar.min;
+					dexs1[i++] = segs[j % 10];
+					dexs1[i++] = segs[j / 10];
+					j = calendar.hour;
+					dexs1[i++] = segs[j % 10];
+					dexs1[i++] = segs[j / 10];
+					break;
+				case 1: // RTC month.day
+					i = 0;
+					dexs1[i++] = segs[calendar.week];
+					dexs1[i++] = 0xff;
+					j = calendar.day;
+					dexs1[i++] = segs[j % 10];
+					dexs1[i++] = segs[j / 10];
+					j = calendar.month;
+					dexs1[i++] = segs[j % 10];
+					dexs1[i++] = segs[j / 10];
+					j = calendar.year % 100;
+					dexs1[i++] = segs[j % 10];
+					dexs1[i++] = segs[j / 10];
+					break;
+			}
+		}
+	}
+	
+	if(++ idex2 >= 4)
+	{
+		idex2 = 0;
+		
+		if(t2 != t0)
+		{
+			t2 = t0;
+			
+			n = t0 % 50;
 			if(n == 0)
 			{
-				type ++;
-				if(type >= 14)
+				type2 ++;
+				if(type2 >= 4)
 				{
-					type = 0;
+					type2 = 0;
 				}
 			}
 			if(is_alarm == 0)
@@ -123,88 +219,47 @@ void HC595_Display(unsigned int n)
 				}
 			}
 			
-			switch(type)
+			switch(type2)
 			{
-				case 0:
-				case 2:
-				case 4:
-				case 6:
-				case 8:
-				case 10:
-				case 12: // RTC hour.min
-					i = 0;
-					j = calendar.min;
-					dexs[i++] = segs[j % 10];
-					dexs[i++] = segs[j / 10];
-					j = calendar.hour;
-					dexs[i++] = segs[j % 10 + (n % 10 < 5 ? 10 : 0)];
-					dexs[i++] = segs[j / 10];
-					break;
-				case 1: // RTC sec.msec
-					i = 0;
-					j = calendar.msec / 10;
-					dexs[i++] = segs[j % 10];
-					dexs[i++] = segs[j / 10];
-					j = calendar.sec;
-					dexs[i++] = segs[j % 10 + 10];
-					dexs[i++] = segs[j / 10];
-					break;
-				case 3: // RTC month.day
-					i = 0;
-					j = calendar.day;
-					dexs[i++] = segs[j % 10];
-					dexs[i++] = segs[j / 10];
-					j = calendar.month;
-					dexs[i++] = segs[j % 10];
-					dexs[i++] = segs[j / 10];
-					break;
-				case 5: // RTC year.week
-					i = 0;
-					dexs[i++] = segs[calendar.week];
-					dexs[i++] = 0xff;
-					j = calendar.year % 100;
-					dexs[i++] = segs[j % 10];
-					dexs[i++] = segs[j / 10];
-					break;
-				case 7: // ADC Temp
+				case 0: // ADC Temp
 					n = adc_temp > 0 ? adc_temp : - adc_temp;
-					dexs[0] = 0xc6;
+					dexs2[0] = 0xc6;
 					for(i = 1; i < 3; i ++)
 					{
 						if(i && n == 0)
 						{
-							dexs[i] = 0xff;
+							dexs2[i] = 0xff;
 						} else {
-							dexs[i] = segs[n % 10];
+							dexs2[i] = segs[n % 10];
 							n /= 10;
 						}
 					}
-					dexs[3] = adc_temp > 0 ? 0xff : 0xbf;
+					dexs2[3] = adc_temp > 0 ? 0xff : 0xbf;
 					break;
-				case 9: // ADC Vref
+				case 1: // ADC Vref
 					n = adc_vref * 100;
-					dexs[0] = 0xc1;
+					dexs2[0] = 0xc1;
 					for(i = 1; i < 4; i ++)
 					{
-						dexs[i] = segs[n % 10 + (i == 3 ? 10 : 0)];
+						dexs2[i] = segs[n % 10 + (i == 3 ? 10 : 0)];
 						n /= 10;
 					}
 					break;
-				case 11: // ADC Voltage1
+				case 2: // ADC Voltage1
 					n = adc_voltage1 * 100;
-					dexs[0] = 0xc1;
+					dexs2[0] = 0xc1;
 					for(i = 1; i < 4; i ++)
 					{
-						dexs[i] = segs[n % 10 + (i == 3 ? 10 : 0)];
+						dexs2[i] = segs[n % 10 + (i == 3 ? 10 : 0)];
 						n /= 10;
 					}
 					break;
-				case 13: // ADC Voltage2
+				case 3: // ADC Voltage2
 					n = adc_voltage2 * 100;
-					dexs[0] = 0xc1;
+					dexs2[0] = 0xc1;
 					for(i = 1; i < 4; i ++)
 					{
-						dexs[i] = segs[n % 10 + (i == 3 ? 10 : 0)];
+						dexs2[i] = segs[n % 10 + (i == 3 ? 10 : 0)];
 						n /= 10;
 					}
 					break;
