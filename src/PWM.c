@@ -30,7 +30,7 @@ void PWM_Init(u16 arr, u16 psc)
 	TIM_TimeBaseStructure.TIM_Period = arr; // 设置在下一个更新事件装入活动的自动重装载寄存器周期的值
 	TIM_TimeBaseStructure.TIM_Prescaler = psc; // 设置用来作为TIMx时钟频率除数的预分频值
 	TIM_TimeBaseStructure.TIM_ClockDivision = 0; // 设置时钟分割:TDTS = Tck_tim
-	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_CenterAligned1; // TIM向上计数模式
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up; // TIM向上计数模式
 	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure); // 根据TIM_TimeBaseInitStruct中指定的参数初始化TIMx的时间基数单位
 	
 	// 初始化TIM3通道PWM模式
@@ -43,7 +43,7 @@ void PWM_Init(u16 arr, u16 psc)
 	TIM_OC1Init(TIM3, &TIM_OCInitStructure); // 根据T指定的参数初始化外设TIM3 OC1
 	TIM_OC1PreloadConfig(TIM3, TIM_OCPreload_Enable); // 使能TIM3在CCR1上的预装载寄存器
 	
-	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High; // 输出极性:TIM输出比较极性高
+	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low; // 输出极性:TIM输出比较极性高
 	TIM_OC2Init(TIM3, &TIM_OCInitStructure); // 根据T指定的参数初始化外设TIM3 OC2
 	TIM_OC2PreloadConfig(TIM3, TIM_OCPreload_Enable); // 使能TIM3在CCR1上的预装载寄存器
 	

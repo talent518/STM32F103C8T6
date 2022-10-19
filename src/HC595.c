@@ -246,20 +246,20 @@ void HC595_Display(u32 t0)
 					}
 					break;
 				case 2: // ADC Voltage1
-					n = adc_voltage1 * 100;
+					n = adc_voltage1 * 10;
 					dexs2[0] = 0xc1;
 					for(i = 1; i < 4; i ++)
 					{
-						dexs2[i] = segs[n % 10 + (i == 3 ? 10 : 0)];
+						dexs2[i] = segs[n % 10 + (i == 2 ? 10 : 0)];
 						n /= 10;
 					}
 					break;
 				case 3: // ADC Voltage2
-					n = adc_voltage2 * 100;
+					n = adc_voltage2 * 10;
 					dexs2[0] = 0xc1;
 					for(i = 1; i < 4; i ++)
 					{
-						dexs2[i] = segs[n % 10 + (i == 3 ? 10 : 0)];
+						dexs2[i] = segs[n % 10 + (i == 2 ? 10 : 0)];
 						n /= 10;
 					}
 					break;
