@@ -35,3 +35,15 @@ STM32F103C8T6
 * ADC: 模数转换输入
   * Channel8: B0
   * Channel9: B1
+
+* SPI2: Quason MCP2515 CAN总线模块
+  * CS: PB12
+  * SCK: PB13
+  * SO: PB14
+  * SI: PB15
+  * INT: PA8
+
+* 继电器
+  * S1: PB10
+  * S2: PB11
+

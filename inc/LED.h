@@ -6,5 +6,7 @@
 void LED_Init(void);
 void LED_SetUsage(u8 onoff);
 void LED_SetAlarm(u8 onoff);
+void LED_SetS1(u8 onoff);
+void LED_SetS2(u8 onoff);
 
 #endif

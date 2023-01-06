@@ -1,6 +1,7 @@
 #include "TM1638.h"
 #include "RTC.h"
 #include "KEY.h"
+#include "LED.h"
 #include "Timer.h"
 #include "COM.h"
 
@@ -32,7 +33,7 @@ static void display2(u8 i, u8 n, u8 *old) {
 
 void KEY_Display(void) {
 	static u8 week = 0x10, hours[2] = {0x10, 0x10}, mins[2] = {0x10, 0x10}, secs[2] = {0x10, 0x10}, msec = 0x10;
-	static u8 led = 0, oldkey = 0xff, key = 0, knot = 1, leds[4] = {0, 0, 0, 0};
+	static u8 led = 0, oldkey = 0xff, key = 0, knot = 1, leds[4] = {0, 0, 0, 0}, leddir = 0, ledmode = 0, s1 = 0, s2 = 0;
 	u8 i, j;
 	
 	// ######## SEG ########
@@ -76,23 +77,43 @@ void KEY_Display(void) {
 						TM1638_Display_LED(j + 1, ON);
 					}
 				}
+			} else {
+				switch(key) {
+					case 0: // S1
+						if(j < 2) s1 = !s1;
+						LED_SetS1(s1);
+						for(i = 0; i < 4; i ++) TM1638_Display_LED(i, s1);
+						if(j >= 2) for(i = 4; i < 8; i ++) TM1638_Display_LED(i, s2);
+						break;
+					case 1: // S2
+						if(j < 2) s2 = !s2;
+						LED_SetS2(s2);
+						if(j >= 2) for(i = 0; i < 4; i ++) TM1638_Display_LED(i, s1);
+						for(i = 4; i < 8; i ++) TM1638_Display_LED(i, s2);
+						break;
+					case 2: // LED Direction Swith
+						if(j >= 2 && j <= 3) leddir = !leddir;
+						break;
+					case 3: // LED Mode Switch
+						if(j >= 2 && j <= 3) ledmode = !ledmode;
+						break;
+				}
 			}
 		}
 	}
 	
 	// ######## LED ########
 	
-	if(key < 4) {
+	if(key >= 2 && key <= 3) {
 		i = ((32767 - RTC_GetDivider()) * 1000 / 32767) / 125;
-		if(key % 2) i = 7 - i;
+		if(leddir) i = 7 - i;
 		if(i != led) {
-			if(key < 2) {
+			if(ledmode) {
 				TM1638_Display_LED(led, OFF);
-				led = i;
 				TM1638_Display_LED(i, ON);
 			} else {
 				TM1638_Display_LED(i, knot);
-				if(key == 3) {
+				if(leddir) {
 					if(i == 0) knot = !knot;
 				} else {
 					if(i == 7) knot = !knot;
