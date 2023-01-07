@@ -1,5 +1,5 @@
 # STM32F103C8T6
-STM32F103C8T6
+48引脚, 64K字节Flash, 20K字节SRAM
 
 ### GPIO口定义
 
