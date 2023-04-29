@@ -1,6 +1,7 @@
 #include <stm32f10x_tim.h>
 
 #include "Timer.h"
+#include "HC595.h"
 
 vu32 milliseconds = 0;
 
@@ -42,5 +43,7 @@ void TIM2_IRQHandler(void)
 		TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
 		
 		milliseconds ++;
+		
+		HC595_Display(milliseconds / 100);
 	}
 }

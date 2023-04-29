@@ -86,8 +86,6 @@ int main(void)
 			
 			LED_SetUsage(1);
 			
-			HC595_Display(msec / 100);
-			
 			n ++;
 			
 			if(n >= 1000)
