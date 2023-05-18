@@ -16,8 +16,8 @@
         <TargetCommonOption>
           <Device>STM32F103C8</Device>
           <Vendor>STMicroelectronics</Vendor>
-          <PackID>Keil.STM32F1xx_DFP.2.4.0</PackID>
-          <PackURL>http://www.keil.com/pack/</PackURL>
+          <PackID>Keil.STM32F1xx_DFP.2.4.1</PackID>
+          <PackURL>https://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000,0x00005000) IROM(0x08000000,0x00010000) CPUTYPE("Cortex-M3") CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
@@ -435,29 +435,14 @@
               <FilePath>.\src\KEY.c</FilePath>
             </File>
             <File>
-              <FileName>PWM.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\PWM.c</FilePath>
-            </File>
-            <File>
               <FileName>ADC.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\ADC.c</FilePath>
             </File>
             <File>
-              <FileName>SPI.c</FileName>
+              <FileName>LED_4x5.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\src\SPI.c</FilePath>
-            </File>
-            <File>
-              <FileName>CANSPI.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\CANSPI.c</FilePath>
-            </File>
-            <File>
-              <FileName>MCP2515.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\MCP2515.c</FilePath>
+              <FilePath>.\src\LED_4x5.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -569,7 +554,7 @@
       <file attr="config" category="header" name="RTE_Driver\Config\RTE_Device.h" version="1.1.2">
         <instance index="0">RTE\Device\STM32F103C8\RTE_Device.h</instance>
         <component Cclass="Device" Cgroup="Startup" Cvendor="Keil" Cversion="1.0.0" condition="STM32F1xx CMSIS"/>
-        <package name="STM32F1xx_DFP" schemaVersion="1.7.2" url="http://www.keil.com/pack/" vendor="Keil" version="2.4.0"/>
+        <package name="STM32F1xx_DFP" schemaVersion="1.7.2" url="https://www.keil.com/pack/" vendor="Keil" version="2.4.1"/>
         <targetInfos>
           <targetInfo name="target"/>
         </targetInfos>
@@ -577,7 +562,7 @@
       <file attr="config" category="source" condition="STM32F1xx MD ARMCC" name="Device\Source\ARM\startup_stm32f10x_md.s" version="1.0.1">
         <instance index="0">RTE\Device\STM32F103C8\startup_stm32f10x_md.s</instance>
         <component Cclass="Device" Cgroup="Startup" Cvendor="Keil" Cversion="1.0.0" condition="STM32F1xx CMSIS"/>
-        <package name="STM32F1xx_DFP" schemaVersion="1.7.2" url="http://www.keil.com/pack/" vendor="Keil" version="2.4.0"/>
+        <package name="STM32F1xx_DFP" schemaVersion="1.7.2" url="https://www.keil.com/pack/" vendor="Keil" version="2.4.1"/>
         <targetInfos>
           <targetInfo name="target"/>
         </targetInfos>
@@ -585,7 +570,7 @@
       <file attr="config" category="source" name="Device\StdPeriph_Driver\templates\stm32f10x_conf.h" version="3.6.0">
         <instance index="0">RTE\Device\STM32F103C8\stm32f10x_conf.h</instance>
         <component Cclass="Device" Cgroup="StdPeriph Drivers" Csub="Framework" Cvendor="Keil" Cversion="3.6.0" condition="STM32F1xx STDPERIPH"/>
-        <package name="STM32F1xx_DFP" schemaVersion="1.7.2" url="http://www.keil.com/pack/" vendor="Keil" version="2.4.0"/>
+        <package name="STM32F1xx_DFP" schemaVersion="1.7.2" url="https://www.keil.com/pack/" vendor="Keil" version="2.4.1"/>
         <targetInfos>
           <targetInfo name="target"/>
         </targetInfos>
@@ -593,7 +578,7 @@
       <file attr="config" category="source" name="Device\Source\system_stm32f10x.c" version="1.0.1">
         <instance index="0">RTE\Device\STM32F103C8\system_stm32f10x.c</instance>
         <component Cclass="Device" Cgroup="Startup" Cvendor="Keil" Cversion="1.0.0" condition="STM32F1xx CMSIS"/>
-        <package name="STM32F1xx_DFP" schemaVersion="1.7.2" url="http://www.keil.com/pack/" vendor="Keil" version="2.4.0"/>
+        <package name="STM32F1xx_DFP" schemaVersion="1.7.2" url="https://www.keil.com/pack/" vendor="Keil" version="2.4.1"/>
         <targetInfos>
           <targetInfo name="target"/>
         </targetInfos>

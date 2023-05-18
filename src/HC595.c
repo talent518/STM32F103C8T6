@@ -3,7 +3,6 @@
 #include "HC595.h"
 #include "SysTick.h"
 #include "RTC.h"
-#include "LED.h"
 #include "main.h"
 
 /************************
@@ -124,13 +123,11 @@ static __I u8 segs[] = {
 };
 //创建一个数组，0-9所对应的十六进制数
 
-void HC595_Display(u32 t0)
+void HC595_Display(u32 t, u16 hex)
 {
-	static u8 dexs1[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, idex1 = 0, type1 = 0xfe;
-	static u32 t1 = 0xffffffff;
+	static u8 dexs1[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, idex1 = 0, type = 0xfe;
 	
-	static u8 dexs2[4] = {0xff, 0xff, 0xff, 0xff}, idex2 = 0, type2 = 0xfe;
-	static u32 t2 = 0xffffffff;
+	static u8 dexs2[4] = {0xff, 0xff, 0xff, 0xff}, idex2 = 0;
 	
 	u8 i, j;
 	u32 n;
@@ -142,51 +139,49 @@ void HC595_Display(u32 t0)
 	{
 		idex1 = 0;
 		
-		if(t1 != t0)
+		if(t % 50 == 0)
 		{
-			t1 = t0;
-			
-			if(t0 % 50 == 0)
+			if(type)
 			{
-				type1 ++;
-				if(type1 >= 2)
-				{
-					type1 = 0;
-				}
+				type = 0;
 			}
-			
-			switch(type1)
+			else
 			{
-				case 0: // RTC hour:min:sec.msec
-					i = 0;
-					j = calendar.msec / 10;
-					dexs1[i++] = segs[j % 10];
-					dexs1[i++] = segs[j / 10];
-					j = calendar.sec;
-					dexs1[i++] = segs[j % 10 + 10];
-					dexs1[i++] = segs[j / 10];
-					j = calendar.min;
-					dexs1[i++] = segs[j % 10];
-					dexs1[i++] = segs[j / 10];
-					j = calendar.hour;
-					dexs1[i++] = segs[j % 10];
-					dexs1[i++] = segs[j / 10];
-					break;
-				case 1: // RTC month.day
-					i = 0;
-					dexs1[i++] = segs[calendar.week];
-					dexs1[i++] = 0xff;
-					j = calendar.day;
-					dexs1[i++] = segs[j % 10];
-					dexs1[i++] = segs[j / 10];
-					j = calendar.month;
-					dexs1[i++] = segs[j % 10];
-					dexs1[i++] = segs[j / 10];
-					j = calendar.year % 100;
-					dexs1[i++] = segs[j % 10];
-					dexs1[i++] = segs[j / 10];
-					break;
+				type = 1;
 			}
+		}
+		
+		switch(type)
+		{
+			case 0: // RTC hour:min:sec.msec
+				i = 0;
+				j = calendar.msec / 10;
+				dexs1[i++] = segs[j % 10];
+				dexs1[i++] = segs[j / 10];
+				j = calendar.sec;
+				dexs1[i++] = segs[j % 10 + 10];
+				dexs1[i++] = segs[j / 10];
+				j = calendar.min;
+				dexs1[i++] = segs[j % 10];
+				dexs1[i++] = segs[j / 10];
+				j = calendar.hour;
+				dexs1[i++] = segs[j % 10];
+				dexs1[i++] = segs[j / 10];
+				break;
+			case 1: // RTC month.day
+				i = 0;
+				dexs1[i++] = segs[calendar.week];
+				dexs1[i++] = 0xff;
+				j = calendar.day;
+				dexs1[i++] = segs[j % 10];
+				dexs1[i++] = segs[j / 10];
+				j = calendar.month;
+				dexs1[i++] = segs[j % 10];
+				dexs1[i++] = segs[j / 10];
+				j = calendar.year % 100;
+				dexs1[i++] = segs[j % 10];
+				dexs1[i++] = segs[j / 10];
+				break;
 		}
 	}
 	
@@ -194,76 +189,10 @@ void HC595_Display(u32 t0)
 	{
 		idex2 = 0;
 		
-		if(t2 != t0)
+		for(i = 0; i < 4; i ++)
 		{
-			t2 = t0;
-			
-			n = t0 % 50;
-			if(n == 0)
-			{
-				type2 ++;
-				if(type2 >= 4)
-				{
-					type2 = 0;
-				}
-			}
-			if(is_alarm == 0)
-			{
-				if(n == 0)
-				{
-					LED_SetAlarm(1);
-				}
-				else if(n == 5)
-				{
-					LED_SetAlarm(0);
-				}
-			}
-			
-			switch(type2)
-			{
-				case 0: // ADC Temp
-					n = adc_temp > 0 ? adc_temp : - adc_temp;
-					dexs2[0] = 0xc6;
-					for(i = 1; i < 3; i ++)
-					{
-						if(i && n == 0)
-						{
-							dexs2[i] = 0xff;
-						} else {
-							dexs2[i] = segs[n % 10];
-							n /= 10;
-						}
-					}
-					dexs2[3] = adc_temp > 0 ? 0xff : 0xbf;
-					break;
-				case 1: // ADC Vref
-					n = adc_vref * 100;
-					dexs2[0] = 0xc1;
-					for(i = 1; i < 4; i ++)
-					{
-						dexs2[i] = segs[n % 10 + (i == 3 ? 10 : 0)];
-						n /= 10;
-					}
-					break;
-				case 2: // ADC Voltage1
-					n = adc_voltage1 * 10;
-					dexs2[0] = 0xc1;
-					for(i = 1; i < 4; i ++)
-					{
-						dexs2[i] = segs[n % 10 + (i == 2 ? 10 : 0)];
-						n /= 10;
-					}
-					break;
-				case 3: // ADC Voltage2
-					n = adc_voltage2 * 10;
-					dexs2[0] = 0xc1;
-					for(i = 1; i < 4; i ++)
-					{
-						dexs2[i] = segs[n % 10 + (i == 2 ? 10 : 0)];
-						n /= 10;
-					}
-					break;
-			}
+			dexs2[i] = segs[hex % 10];
+			hex /= 10;
 		}
 	}
 }

@@ -1,13 +1,16 @@
 #include "ADC.h"
+#include "Timer.h"
+#include "COM.h"
+#include "LED_4x5.h"
 
 #include <stm32f10x_dma.h>
 #include <stm32f10x_adc.h>
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_rcc.h>
 
-#define ADC_LEN1 64
-#define ADC_LEN2 4
-static vu16 ADC1ConvertedValue[ADC_LEN1][ADC_LEN2];
+#define ADC_SIZE 1024
+#define ADC_CHS 2
+static vu16 ADC1ConvertedValue[ADC_SIZE][ADC_CHS];
 
 static void _DMA_Init(void)
 {
@@ -18,7 +21,7 @@ static void _DMA_Init(void)
 	DMA_InitStructure.DMA_PeripheralBaseAddr = (u32) &ADC1->DR; // 外设基地址
 	DMA_InitStructure.DMA_MemoryBaseAddr = (u32) ADC1ConvertedValue; // 内存基地址
 	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC; // 数据传输从外设到内存
-	DMA_InitStructure.DMA_BufferSize = ADC_LEN1 * ADC_LEN2; // DMA缓存
+	DMA_InitStructure.DMA_BufferSize = ADC_SIZE * ADC_CHS; // DMA缓存
 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable; // 外设地址不变
 	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable; // 内存地址递增
 	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord; //外设数据16位
@@ -52,16 +55,13 @@ static void _ADC_Init(void)
 	ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;	// 模数转换工作在单次转换模式
 	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None;	// 转换由软件而不是外部触发启动
 	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;	// ADC数据右对齐
-	ADC_InitStructure.ADC_NbrOfChannel = 4;	// 顺序进行规则转换的ADC通道的数目
+	ADC_InitStructure.ADC_NbrOfChannel = 2;	// 顺序进行规则转换的ADC通道的数目
 	ADC_Init(ADC1, &ADC_InitStructure);	// 根据ADC_InitStruct中指定的参数初始化外设ADCx的寄存器
 	
 	// ADC1,ADC通道,采样时间为239.5周期
 	ADC_RegularChannelConfig(ADC1, ADC_Channel_8, 1, ADC_SampleTime_239Cycles5);
 	ADC_RegularChannelConfig(ADC1, ADC_Channel_9, 2, ADC_SampleTime_239Cycles5);
-	ADC_RegularChannelConfig(ADC1, ADC_Channel_TempSensor, 3, ADC_SampleTime_239Cycles5);
-	ADC_RegularChannelConfig(ADC1, ADC_Channel_Vrefint, 4, ADC_SampleTime_239Cycles5);
 	
-	ADC_TempSensorVrefintCmd(ENABLE); // 开启内部温度传感器
 	ADC_DMACmd(ADC1, ENABLE); // 使能ADC DMA传输
 	ADC_Cmd(ADC1, ENABLE);// 使能指定的ADC1
 	
@@ -72,36 +72,94 @@ static void _ADC_Init(void)
 	while(ADC_GetCalibrationStatus(ADC1)); // 等待校准结束
 }
 
+static void _NVIC_Init(void)
+{
+       NVIC_InitTypeDef NVIC_InitStructure;
+   
+        /* Configure the NVIC Preemption Priority Bits */  
+       NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
+        
+        NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+        NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+        NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+
+        NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel1_IRQn;
+        NVIC_Init(&NVIC_InitStructure);        
+}
+
 void ADC1_Init(void)
 {
 	_DMA_Init();
 	_ADC_Init();
+	_NVIC_Init();
 	
 	DMA_Cmd(DMA1_Channel1, ENABLE); // 启动DMA通道
 	ADC_SoftwareStartConvCmd(ADC1, ENABLE); // 启动ADC1软件转换
+	DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, ENABLE);
 }
 
-// 获得ADC值
-// ch:通道值 0~3
-u16 ADC1_GET(u8 ch)
+vu16 adc_val = 0;
+
+void DMA1_Channel1_IRQHandler(void)
 {
-	u32 ret = 0;
-	u16 max = 0, min = 0xffff, v;
-	u8 i;
+	u8 ch, v, x, y, x1, x2;
+	u16 i, vols[ADC_CHS], min, max, vals[ADC_CHS];
+	static u8 maxs[ADC_CHS] = {0, 0};
+	static u32 msec = 0;
+	u32 sum, ms = milliseconds / 1000;
 	
-	for(i = 0; i < ADC_LEN1; i ++)
+	if(msec != ms)
 	{
-		v = ADC1ConvertedValue[i][ch];
-		ret += v;
-		if(min > v)
+		msec = ms;
+		for(i = 0; i < ADC_CHS; i ++) maxs[i] = 0;
+	}
+	
+	for(ch = 0; ch < ADC_CHS; ch ++)
+	{
+		sum = 0;
+		min = 4095;
+		max = 0;
+		for(i = 0; i < ADC_SIZE; i ++)
 		{
-			min = v;
+			s16 val = ADC1ConvertedValue[i][ch] - 2048;
+			sum += (val < 0 ? -val : val);
+			
+			if(ADC1ConvertedValue[i][ch] > max) max = ADC1ConvertedValue[i][ch];
+			if(ADC1ConvertedValue[i][ch] < min) min = ADC1ConvertedValue[i][ch];
 		}
-		if(v > max)
+		
+		vals[ch] = (max - min) * 33 / 4095;
+		if(vals[ch] > maxs[ch]) maxs[ch] = vals[ch];
+		
+		vols[ch] = sum * 400 / (ADC_SIZE * 2047);
+		if(vols[ch] > 100) vols[ch] = 100;
+		
+		v = (vols[ch] + 5) / 10;
+		
+		x1 = ch * ADC_CHS;
+		x2 = x1 + ADC_CHS;
+		
+		for(x = x1; x < x2; x ++)
 		{
-			max = v;
+			for(y = 0; y < 5; y ++)
+			{
+				if(v)
+				{
+					v --;
+					LED_4x5_SetVal(x, y, 1);
+				}
+				else
+				{
+					LED_4x5_SetVal(x, y, 0);
+				}
+			}
 		}
 	}
 	
-	return (ret - min - max) / (ADC_LEN1 - 2);
+	adc_val = (maxs[0] * 100) + maxs[1];
+	
+	COM_printf("[I][%u][ADC] %3u %3u %1.1fV %1.1fV\r\n", milliseconds, vols[0], vols[1], vals[0] / 10.0f, vals[1] / 10.0f);
+
+	DMA_ClearITPendingBit(DMA1_IT_TC1);
+	DMA_ClearFlag(DMA1_FLAG_TC1);
 }

@@ -2,6 +2,8 @@
 
 #include "Timer.h"
 #include "HC595.h"
+#include "LED_4x5.h"
+#include "ADC.h"
 
 vu32 milliseconds = 0;
 
@@ -34,6 +36,8 @@ void Timer_Init(u16 Period)
 	NVIC_Init(&NVIC_InitStructure);  //根据NVIC_InitStruct中指定的参数初始化外设NVIC寄存器
 
 	TIM_Cmd(TIM2, ENABLE);  //使能TIMx外设
+
+	LED_4x5_Init();
 }
 
 void TIM2_IRQHandler(void)
@@ -44,6 +48,7 @@ void TIM2_IRQHandler(void)
 		
 		milliseconds ++;
 		
-		HC595_Display(milliseconds / 100);
+		LED_4x5_Scan();
+		HC595_Display(milliseconds / 100, adc_val);
 	}
 }

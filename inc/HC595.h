@@ -4,6 +4,6 @@
 #include <stm32f10x.h>
 
 void HC595_Init(void);
-void HC595_Display(u32 u);
+void HC595_Display(u32 u, u16 hex);
 
 #endif

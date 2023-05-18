@@ -7,15 +7,22 @@
   * TX: A9
   * RX: A10
 
-* PWM-TIM3: 4通道脉宽调制
-  * Channel1: A6
-  * Channel2: A7
-
-* TIM2: 每秒一次的计时器
+* TIM2: 毫秒计时器
 
 * LED: 指示灯
   * 闹钟: B8
   * TIM2计时器占空比: B9
+
+* LED阵列: 音乐节奏灯
+  * 1行: B12
+  * 2行: B13
+  * 3行: B14
+  * 4行: B15
+  * 5行: A8
+  * 1列: A7
+  * 2列: A6
+  * 3列: A12
+  * 4列: A11
 
 * HC595: 8位共阳极数码管
   * DIO: A0
@@ -32,18 +39,10 @@
   * CLK: A4
   * DIO: A3
 
-* ADC: 模数转换输入
+* ADC: 模拟声音采集
   * Channel8: B0
   * Channel9: B1
-
-* SPI2: Quason MCP2515 CAN总线模块
-  * CS: PB12
-  * SCK: PB13
-  * SO: PB14
-  * SI: PB15
-  * INT: PA8
 
 * 继电器
   * S1: PB10
   * S2: PB11
-
