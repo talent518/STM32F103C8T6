@@ -8,7 +8,7 @@
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_rcc.h>
 
-#define ADC_SIZE 1024
+#define ADC_SIZE 768
 #define ADC_CHS 2
 static vu16 ADC1ConvertedValue[ADC_SIZE][ADC_CHS];
 
@@ -102,11 +102,11 @@ vu16 adc_val = 0;
 
 void DMA1_Channel1_IRQHandler(void)
 {
-	u8 ch, v, x, y, x1, x2;
-	u16 i, vols[ADC_CHS], min, max, vals[ADC_CHS];
-	static u8 maxs[ADC_CHS] = {0, 0};
+	u8 ch, x, y, x1, x2;
+	u16 i, vols[ADC_CHS], max, v;
+	static u16 maxs[ADC_CHS] = {0, 0};
 	static u32 msec = 0;
-	u32 sum, ms = milliseconds / 1000;
+	u32 ms = milliseconds / 1000;
 	
 	if(msec != ms)
 	{
@@ -116,25 +116,28 @@ void DMA1_Channel1_IRQHandler(void)
 	
 	for(ch = 0; ch < ADC_CHS; ch ++)
 	{
-		sum = 0;
-		min = 4095;
 		max = 0;
 		for(i = 0; i < ADC_SIZE; i ++)
 		{
 			s16 val = ADC1ConvertedValue[i][ch] - 2048;
-			sum += (val < 0 ? -val : val);
-			
-			if(ADC1ConvertedValue[i][ch] > max) max = ADC1ConvertedValue[i][ch];
-			if(ADC1ConvertedValue[i][ch] < min) min = ADC1ConvertedValue[i][ch];
+			if(val < 0) val = -val;
+			if(val > max) max = val;
 		}
 		
-		vals[ch] = (max - min) * 33 / 4095;
-		if(vals[ch] > maxs[ch]) maxs[ch] = vals[ch];
+		v = max * 3300 / 4095;
 		
-		vols[ch] = sum * 400 / (ADC_SIZE * 2047);
-		if(vols[ch] > 100) vols[ch] = 100;
+		vols[ch] = v;
 		
-		v = (vols[ch] + 5) / 10;
+		if(v > maxs[ch]) maxs[ch] = v;
+		
+		v = vols[ch];
+		
+		if(v < 250) v = 0;
+		else v -= 250;
+		
+		if(v > 1400) v = 1400;
+		
+		v /= 140;
 		
 		x1 = ch * ADC_CHS;
 		x2 = x1 + ADC_CHS;
@@ -156,9 +159,9 @@ void DMA1_Channel1_IRQHandler(void)
 		}
 	}
 	
-	adc_val = (maxs[0] * 100) + maxs[1];
+	adc_val = ((maxs[0] / 100) * 100) + (maxs[1] / 100);
 	
-	COM_printf("[I][%u][ADC] %3u %3u %1.1fV %1.1fV\r\n", milliseconds, vols[0], vols[1], vals[0] / 10.0f, vals[1] / 10.0f);
+	COM_printf("[I][%u][ADC] %.3f %.3f %.3f %.3f\r\n", milliseconds, vols[0] / 1000.0f, vols[1] / 1000.0f, maxs[0] / 1000.0f, maxs[1] / 1000.0f);
 
 	DMA_ClearITPendingBit(DMA1_IT_TC1);
 	DMA_ClearFlag(DMA1_FLAG_TC1);
