@@ -7,15 +7,15 @@
 #include "ADC.h"
 #include "IWDG.h"
 #include "Timer.h"
+#include "OLED.h"
 
 #include "main.h"
 
 //主机端程序
 int main(void)
 {
-	u16 n = 0, alarm = 0;
 	u32 msec, msec1 = 0;
-	const char *weeks[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+	u8 is_oled = 1;
 	
 	SysTick_Init(72);
 	LED_Init();
@@ -24,6 +24,8 @@ int main(void)
 	HC595_Init();
 	KEY_Init();
 	ADC1_Init();
+	OLED_Init();
+	
 	IWDG_Init(); // 窗口看门狗初始化函数
 	Timer_Init(1000-1); // 设置1ms计时器
 	
@@ -37,55 +39,17 @@ int main(void)
 		{
 			msec1 = msec;
 			
-			LED_SetUsage(1);
-			
-			n ++;
-			
-			if(n >= 1000)
+			if(is_oled && msec > 200)
 			{
-				n = 0;
+				is_oled = 0;
+				OLED_Config();
 			}
 			
-			if(n % 20 == 0)
+			if(adc_is_draw)
 			{
-				KEY_Display();
+				OLED_DrawRefresh();
+				adc_is_draw = 0;
 			}
-			
-			COM_RunCmd();
-			
-			if(n % 100 == 0)
-			{
-				if(is_alarm)
-				{
-					if(++alarm >= 100)
-					{
-						is_alarm = 0;
-						alarm = 0;
-						LED_SetAlarm(0);
-					}
-					else
-					{
-						LED_SetAlarm(alarm % 2);
-					}
-				}
-				
-				RTC_Get(); // 更新时间
-			}
-			
-			if(n % 250 == 0)
-			{
-				COM_ClearLine = 0;
-				{
-					COM_printf("\033[2KRTC: %u-%02u-%02u %s %02u:%02u:%02u\r", calendar.year, calendar.month, calendar.day, weeks[calendar.week], calendar.hour, calendar.min, calendar.sec);
-				}
-				
-				COM_ClearLine = 1;
-			}
-			
-			DMA_SendData();
-			
-			IWDG_FeedDog();
-			LED_SetUsage(0);
 		}
 	}
 }

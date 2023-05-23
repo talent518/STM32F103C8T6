@@ -5,5 +5,6 @@
 
 void ADC1_Init(void);
 extern vu16 adc_val;
+extern vu8 adc_is_draw;
 
 #endif

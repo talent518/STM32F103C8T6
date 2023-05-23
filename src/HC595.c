@@ -17,24 +17,25 @@ GND------------>½ÓµØ
 
 #define DIO1_0 GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_RESET)
 #define DIO1_1 GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_SET)
-#define DIO2_0 GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_RESET)
-#define DIO2_1 GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET)
+#define DIO2_0 GPIO_WriteBit(GPIOB, GPIO_Pin_2, Bit_RESET)
+#define DIO2_1 GPIO_WriteBit(GPIOB, GPIO_Pin_2, Bit_SET)
 
 #define RCLK1_0 GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_RESET)
 #define RCLK1_1 GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_SET)
-#define RCLK2_0 GPIO_WriteBit(GPIOB, GPIO_Pin_6, Bit_RESET)
-#define RCLK2_1 GPIO_WriteBit(GPIOB, GPIO_Pin_6, Bit_SET)
+#define RCLK2_0 GPIO_WriteBit(GPIOB, GPIO_Pin_3, Bit_RESET)
+#define RCLK2_1 GPIO_WriteBit(GPIOB, GPIO_Pin_3, Bit_SET)
 
 #define SCLK1_0 GPIO_WriteBit(GPIOA, GPIO_Pin_2, Bit_RESET)
 #define SCLK1_1 GPIO_WriteBit(GPIOA, GPIO_Pin_2, Bit_SET)
-#define SCLK2_0 GPIO_WriteBit(GPIOB, GPIO_Pin_7, Bit_RESET)
-#define SCLK2_1 GPIO_WriteBit(GPIOB, GPIO_Pin_7, Bit_SET)
+#define SCLK2_0 GPIO_WriteBit(GPIOB, GPIO_Pin_4, Bit_RESET)
+#define SCLK2_1 GPIO_WriteBit(GPIOB, GPIO_Pin_4, Bit_SET)
 
 void HC595_Init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
 
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB, ENABLE);
+	GPIO_PinRemapConfig(GPIO_Remap_SWJ_Disable, ENABLE);
 	
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
@@ -42,7 +43,7 @@ void HC595_Init(void)
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	
 	DIO1_0;

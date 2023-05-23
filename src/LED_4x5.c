@@ -11,8 +11,8 @@ typedef struct {
 } const led_4x5_t;
 
 static led_4x5_t columns[] = {
-	{GPIOA, GPIO_Pin_7},
-	{GPIOA, GPIO_Pin_6},
+	{GPIOA, GPIO_Pin_14},
+	{GPIOA, GPIO_Pin_13},
 	{GPIOA, GPIO_Pin_12},
 	{GPIOA, GPIO_Pin_11},
 };
@@ -37,6 +37,7 @@ void LED_4x5_Init(void)
 	u8 i;
 	
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
+	GPIO_PinRemapConfig(GPIO_Remap_SWJ_Disable, ENABLE);
 	
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;

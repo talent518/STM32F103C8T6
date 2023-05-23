@@ -24,7 +24,7 @@ static u8 cmdLineIdx = 0;
 static u8 cmdLineSize = 0;
 
 // 发送缓冲区: 必须20ms内能发完
-#define TX_SIZE 2048
+#define TX_SIZE 1024
 static u8 TX_BUF[TX_SIZE];
 static u16 TX_IDX = 0;
 static u16 TX_CNT = 0;

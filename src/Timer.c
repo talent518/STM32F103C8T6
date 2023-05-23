@@ -4,6 +4,11 @@
 #include "HC595.h"
 #include "LED_4x5.h"
 #include "ADC.h"
+#include "LED.h"
+#include "COM.h"
+#include "KEY.h"
+#include "RTC.h"
+#include "IWDG.h"
 
 vu32 milliseconds = 0;
 
@@ -48,7 +53,59 @@ void TIM2_IRQHandler(void)
 		
 		milliseconds ++;
 		
+		static u16 n = 0, alarm = 0;
+		static const char *weeks[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+		
+		LED_SetUsage(1);
+
 		LED_4x5_Scan();
 		HC595_Display(milliseconds / 100, adc_val);
+		
+		n ++;
+		
+		if(n >= 1000)
+		{
+			n = 0;
+		}
+		
+		if(n % 20 == 0)
+		{
+			KEY_Display();
+		}
+		
+		COM_RunCmd();
+		
+		if(n % 100 == 0)
+		{
+			if(is_alarm)
+			{
+				if(++alarm >= 100)
+				{
+					is_alarm = 0;
+					alarm = 0;
+					LED_SetAlarm(0);
+				}
+				else
+				{
+					LED_SetAlarm(alarm % 2);
+				}
+			}
+			
+			RTC_Get(); // 更新时间
+		}
+		
+		if(n % 250 == 0)
+		{
+			COM_ClearLine = 0;
+			{
+				COM_printf("\033[2KRTC: %u-%02u-%02u %s %02u:%02u:%02u\r", calendar.year, calendar.month, calendar.day, weeks[calendar.week], calendar.hour, calendar.min, calendar.sec);
+			}
+			
+			COM_ClearLine = 1;
+		}
+		
+		DMA_SendData();
+		IWDG_FeedDog();
+		LED_SetUsage(0);
 	}
 }

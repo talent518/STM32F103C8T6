@@ -2,11 +2,14 @@
 #include "Timer.h"
 #include "COM.h"
 #include "LED_4x5.h"
+#include "OLED.h"
 
 #include <stm32f10x_dma.h>
 #include <stm32f10x_adc.h>
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_rcc.h>
+#include <stdio.h>
+#include <string.h>
 
 #define ADC_SIZE 768
 #define ADC_CHS 2
@@ -99,14 +102,17 @@ void ADC1_Init(void)
 }
 
 vu16 adc_val = 0;
+vu8 adc_is_draw = 0;
+static u32 msec = 0;
+static u16 maxs[ADC_CHS];
 
 void DMA1_Channel1_IRQHandler(void)
 {
-	u8 ch, x, y, x1, x2;
-	u16 i, vols[ADC_CHS], max, v;
+	u8 ch, x, y, x1, x2, redraw = !adc_is_draw;
+	u16 i, vols[ADC_CHS], max, v, vals[ADC_CHS];
 	static u16 maxs[ADC_CHS] = {0, 0};
 	static u32 msec = 0;
-	u32 ms = milliseconds / 1000;
+	u32 ms = milliseconds / 500, is_dot = (ms / 20) % 2;
 	
 	if(msec != ms)
 	{
@@ -114,30 +120,46 @@ void DMA1_Channel1_IRQHandler(void)
 		for(i = 0; i < ADC_CHS; i ++) maxs[i] = 0;
 	}
 	
+	if(redraw)
+	{
+		OLED_DrawClear();
+		OLED_DrawLine(0, 15, 127, 15);
+	}
+	
 	for(ch = 0; ch < ADC_CHS; ch ++)
 	{
 		max = 0;
+		if(redraw)
+		{
+			y = 16 + (24 * ch) + 12;
+		}
 		for(i = 0; i < ADC_SIZE; i ++)
 		{
-			s16 val = ADC1ConvertedValue[i][ch] - 2048;
+			s32 val = ADC1ConvertedValue[i][ch] - 2048;
+			if(redraw && i < 128)
+			{
+				if(is_dot) OLED_DrawDot(i, y - (val * 12 / 2048), 1);
+				else OLED_DrawLine(i, y, i, y - (val * 12 / 2048));
+			}
 			if(val < 0) val = -val;
 			if(val > max) max = val;
 		}
 		
 		v = max * 3300 / 4095;
-		
 		vols[ch] = v;
-		
-		if(v > maxs[ch]) maxs[ch] = v;
-		
-		v = vols[ch];
 		
 		if(v < 250) v = 0;
 		else v -= 250;
 		
 		if(v > 1400) v = 1400;
 		
-		v /= 140;
+		vals[ch] = v;
+		
+		v /= 14;
+		
+		if(v > maxs[ch]) maxs[ch] = v;
+		
+		v /= 10;
 		
 		x1 = ch * ADC_CHS;
 		x2 = x1 + ADC_CHS;
@@ -159,9 +181,25 @@ void DMA1_Channel1_IRQHandler(void)
 		}
 	}
 	
-	adc_val = ((maxs[0] / 100) * 100) + (maxs[1] / 100);
+	adc_val = ((maxs[0] / 10) * 100) + (maxs[1] / 10);
 	
-	COM_printf("[I][%u][ADC] %.3f %.3f %.3f %.3f\r\n", milliseconds, vols[0] / 1000.0f, vols[1] / 1000.0f, maxs[0] / 1000.0f, maxs[1] / 1000.0f);
+	if(redraw)
+	{
+		char buf[24];
+		for(ch = 0; ch < ADC_CHS; ch ++)
+		{
+			sprintf(buf, "CH%u: %3d", ch + 1, vals[ch] / 14);
+			OLED_DrawStr(ch * 64, 0, buf, 1);
+			v = vals[ch] / 21.875f;
+			for(x = 0; x < v; x ++)
+			{
+				OLED_DrawSet(x + 64 * ch, 1, 0xff);
+			}
+		}
+		adc_is_draw = 1;
+	}
+	
+	COM_printf("[I][%u][ADC] %.3f %.3f %3u %3u\r\n", milliseconds, vols[0] / 1000.0f, vols[1] / 1000.0f, maxs[0], maxs[1]);
 
 	DMA_ClearITPendingBit(DMA1_IT_TC1);
 	DMA_ClearFlag(DMA1_FLAG_TC1);
