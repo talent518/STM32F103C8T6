@@ -101,6 +101,70 @@ void ADC1_Init(void)
 	DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, ENABLE);
 }
 
+#ifdef USE_FFT
+#include <math.h>
+
+typedef struct {
+	float real;
+	float imag;
+} complex_t;
+
+#ifndef PI
+# define PI 3.14159265358979323846264338327950288
+#endif
+
+/**
+   fft(v,N):
+   [0] If N==1 then return.
+   [1] For k = 0 to N/2-1, let ve[k] = v[2*k]
+   [2] Compute fft(ve, N/2);
+   [3] For k = 0 to N/2-1, let vo[k] = v[2*k+1]
+   [4] Compute fft(vo, N/2);
+   [5] For m = 0 to N/2-1, do [6] through [9]
+   [6]   Let w.real = cosf(2*PI*m/N)
+   [7]   Let w.imag = -sinf(2*PI*m/N)
+   [8]   Let v[m] = ve[m] + w*vo[m]
+   [9]   Let v[m+N/2] = ve[m] - w*vo[m]
+ */
+void fft(complex_t *v, int n, complex_t *tmp) {
+	int k,m;
+	complex_t z, w, *vo, *ve;
+
+	/* otherwise, do nothing and return */
+	if(n <= 1) return;
+
+	ve = tmp; vo = tmp+n/2;
+	for(k=0; k<n/2; k++)
+	{
+		ve[k] = v[2*k];
+		vo[k] = v[2*k+1];
+	}
+	/* FFT on even-indexed elements of v[] */
+	fft( ve, n/2, v );
+	/* FFT on odd-indexed elements of v[] */
+	fft( vo, n/2, v );
+	for(m = 0; m < n / 2; m ++) {
+		w.real = cosf(2*PI*m/(double)n);
+		w.imag = -sinf(2*PI*m/(double)n);
+		/* real(w*vo[m]) */
+		z.real = w.real*vo[m].real - w.imag*vo[m].imag;
+		/* imag(w*vo[m]) */
+		z.imag = w.real*vo[m].imag + w.imag*vo[m].real;
+		v[  m  ].real = ve[m].real + z.real;
+		v[  m  ].imag = ve[m].imag + z.imag;
+		v[m+n/2].real = ve[m].real - z.real;
+		v[m+n/2].imag = ve[m].imag - z.imag;
+	}
+}
+#define DRAW_POS 24
+#define DRAW_SZ 20
+#define DRAW_LN 10
+#else
+#define DRAW_POS 16
+#define DRAW_SZ 24
+#define DRAW_LN 12
+#endif
+
 vu16 adc_val = 0;
 vu8 adc_is_draw = 0;
 static u32 msec = 0;
@@ -113,6 +177,9 @@ void DMA1_Channel1_IRQHandler(void)
 	static u16 maxs[ADC_CHS] = {0, 0};
 	static u32 msec = 0;
 	u32 ms = milliseconds / 500, is_dot = (ms / 20) % 2;
+#ifdef USE_FFT
+	complex_t fft_val[128], fft_res[128];
+#endif
 	
 	if(msec != ms)
 	{
@@ -131,16 +198,22 @@ void DMA1_Channel1_IRQHandler(void)
 		max = 0;
 		if(redraw)
 		{
-			y = 16 + (24 * ch) + 12;
+			y = DRAW_POS + (DRAW_SZ * ch) + DRAW_LN;
 		}
 		for(i = 0; i < ADC_SIZE; i ++)
 		{
 			s32 val = ADC1ConvertedValue[i][ch] - 2048;
 			if(redraw && i < 128)
 			{
-				s16 v = (val * 12 * 3300 / 4095 / 1650);
+				s16 v = (val * DRAW_LN * 3300 / 4095 / 1650);
 				if(is_dot) OLED_DrawDot(i, y - v, 1);
 				else OLED_DrawLine(i, y, i, y - v);
+				
+			#ifdef USE_FFT
+				complex_t *fv = &fft_val[i];
+				fv->real = val / 2048.0f;
+				fv->imag = 0;
+			#endif
 			}
 			if(val < 0) val = -val;
 			if(val > max) max = val;
@@ -154,10 +227,9 @@ void DMA1_Channel1_IRQHandler(void)
 		
 		if(v > 1400) v = 1400;
 		
-		vals[ch] = v;
-		
 		v /= 14;
 		
+		vals[ch] = v;
 		if(v > maxs[ch]) maxs[ch] = v;
 		
 		v /= 10;
@@ -180,25 +252,34 @@ void DMA1_Channel1_IRQHandler(void)
 				}
 			}
 		}
-	}
-	
-	adc_val = ((maxs[0] / 10) * 100) + (maxs[1] / 10);
-	
-	if(redraw)
-	{
-		char buf[24];
-		for(ch = 0; ch < ADC_CHS; ch ++)
+		
+		if(redraw)
 		{
-			sprintf(buf, "CH%u: %3d", ch + 1, vals[ch] / 14);
+			char buf[24];
+			sprintf(buf, "CH%u: %3d", ch + 1, vals[ch]);
 			OLED_DrawStr(ch * 64, 0, buf, 1);
-			v = vals[ch] / 21.875f;
+			v = vals[ch] * 63 / 100;
 			for(x = 0; x < v; x ++)
 			{
 				OLED_DrawSet(x + 64 * ch, 1, 0xff);
 			}
+		#ifdef USE_FFT
+			fft(fft_val, 128, fft_res);
+			for(x = 0; x < 64; x ++)
+			{
+				complex_t *fv = &fft_val[x];
+				u8 v = sqrtf(fv->real * fv->real + fv->imag * fv->imag) * 2.0f;
+				if(v > 8) v = 8;
+				OLED_DrawSet(x + 64 * ch, 2, (0xff << (8 - v)));
+			}
+			// OLED_DrawLine(0, 23, 127, 23);
+		#endif
 		}
-		adc_is_draw = 1;
 	}
+	
+	adc_val = ((maxs[0] / 10) * 100) + (maxs[1] / 10);
+	
+	if(redraw) adc_is_draw = 1;
 	
 	COM_printf("[I][%u][ADC] %.3f %.3f %3u %3u\r\n", milliseconds, vols[0] / 1000.0f, vols[1] / 1000.0f, maxs[0], maxs[1]);
 

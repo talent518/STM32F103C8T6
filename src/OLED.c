@@ -118,6 +118,13 @@ void OLED_Config(void)
 	OLED_WriteCmd(0xaf); // --turn on oled panel´ò¿ªledÃæ°å
 	
 	OLED_CLS();
+	OLED_ShowStr(52, 0, "ABAO", 1);
+	OLED_ShowStr(10, 1, "talent518@yeah.net", 1);
+	OLED_ShowCN(40, 3, 0);
+	OLED_ShowCN(56, 3, 1);
+	OLED_ShowCN(72, 3, 2);
+	OLED_ShowStr(37, 6, "Wave Form", 1);
+	OLED_ShowStr(46, 7, "Volume", 1);
 }
 
 /**

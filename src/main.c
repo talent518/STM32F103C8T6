@@ -40,7 +40,7 @@ int main(void)
 			OLED_Config();
 		}
 		
-		if(adc_is_draw)
+		if(adc_is_draw && msec > 3000)
 		{
 			OLED_DrawRefresh();
 			adc_is_draw = 0;
