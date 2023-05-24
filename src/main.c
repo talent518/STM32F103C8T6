@@ -14,7 +14,6 @@
 //Ö÷»ú¶Ë³ÌÐò
 int main(void)
 {
-	u32 msec, msec1 = 0;
 	u8 is_oled = 1;
 	
 	SysTick_Init(72);
@@ -33,23 +32,18 @@ int main(void)
 	
 	while(1)
 	{
-		msec = milliseconds;
+		u32 msec = milliseconds;
 		
-		if(msec != msec1)
+		if(is_oled && msec > 200)
 		{
-			msec1 = msec;
-			
-			if(is_oled && msec > 200)
-			{
-				is_oled = 0;
-				OLED_Config();
-			}
-			
-			if(adc_is_draw)
-			{
-				OLED_DrawRefresh();
-				adc_is_draw = 0;
-			}
+			is_oled = 0;
+			OLED_Config();
+		}
+		
+		if(adc_is_draw)
+		{
+			OLED_DrawRefresh();
+			adc_is_draw = 0;
 		}
 	}
 }

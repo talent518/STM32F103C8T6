@@ -138,8 +138,9 @@ void DMA1_Channel1_IRQHandler(void)
 			s32 val = ADC1ConvertedValue[i][ch] - 2048;
 			if(redraw && i < 128)
 			{
-				if(is_dot) OLED_DrawDot(i, y - (val * 12 / 2048), 1);
-				else OLED_DrawLine(i, y, i, y - (val * 12 / 2048));
+				s16 v = (val * 12 * 3300 / 4095 / 1650);
+				if(is_dot) OLED_DrawDot(i, y - v, 1);
+				else OLED_DrawLine(i, y, i, y - v);
 			}
 			if(val < 0) val = -val;
 			if(val > max) max = val;

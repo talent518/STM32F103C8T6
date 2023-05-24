@@ -82,8 +82,12 @@ void OLED_WriteDat(u8 I2C_Data)//写数据
 	OLED_WriteByte(0x40, I2C_Data);
 }
 
+static u8 is_cfged = 0;
 void OLED_Config(void)
 {
+	if(is_cfged) return;
+	
+	is_cfged = 1;
 	OLED_WriteCmd(0xae); // --turn off oled panel"关闭led面板"
 	OLED_WriteCmd(0x00); // ---set low column address设置低列地址
 	OLED_WriteCmd(0x10); // ---set high column address设置高列地址
@@ -267,6 +271,8 @@ void OLED_DrawClear(void)
 
 void OLED_DrawRefresh(void)
 {
+	if(!is_cfged) return;
+	
 	u8 i, n;
 	for(i = 0; i < 8; i ++)
 	{
@@ -279,9 +285,14 @@ void OLED_DrawRefresh(void)
 	}
 }
 
+u8 OLED_DrawGet(u8 x, u8 y)
+{
+	return OLED_GRAM[x][y];
+}
+
 void OLED_DrawSet(u8 x, u8 y, u8 v)
 {
-		OLED_GRAM[x][y] = v;
+	OLED_GRAM[x][y] = v;
 }
 
 /**

@@ -19,6 +19,7 @@ void OLED_ShowCN(u8 x, u8 y, u8 N);
 
 void OLED_DrawClear(void);
 void OLED_DrawRefresh(void);
+u8 OLED_DrawGet(u8 x, u8 y);
 void OLED_DrawSet(u8 x, u8 y, u8 v);
 void OLED_DrawDot(u8 x, u8 y, u8 t);
 void OLED_DrawLine(u8 x1, u8 y1, u8 x2, u8 y2);
