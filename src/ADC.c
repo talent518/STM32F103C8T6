@@ -205,7 +205,7 @@ void DMA1_Channel1_IRQHandler(void)
 			s32 val = ADC1ConvertedValue[i][ch] - 2048;
 			if(redraw && i < 128)
 			{
-				s16 v = (val * DRAW_LN * 3300 / 4095 / 1650);
+				s16 v = (val * DRAW_LN * 3300 / 4095 / 1600);
 				if(is_dot) OLED_DrawDot(i, y - v, 1);
 				else OLED_DrawLine(i, y, i, y - v);
 				
@@ -222,8 +222,8 @@ void DMA1_Channel1_IRQHandler(void)
 		v = max * 3300 / 4095;
 		vols[ch] = v;
 		
-		if(v < 250) v = 0;
-		else v -= 250;
+		if(v < 200) v = 0;
+		else v -= 200;
 		
 		if(v > 1400) v = 1400;
 		
