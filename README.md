@@ -46,3 +46,8 @@
 * 继电器
   * S1: PB10
   * S2: PB11
+
+* CPU占用情况
+  * Timer: A6
+  * ADC: A7
+  * OLED: A15

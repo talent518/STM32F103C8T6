@@ -56,7 +56,7 @@ void TIM2_IRQHandler(void)
 		static u16 n = 0, alarm = 0;
 		static const char *weeks[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 		
-		LED_SetUsage(1);
+		LED_SetUsage(LED_USAGE_TIMER, 1);
 
 		LED_4x5_Scan();
 		HC595_Display(milliseconds / 100, adc_val);
@@ -106,6 +106,6 @@ void TIM2_IRQHandler(void)
 		
 		DMA_SendData();
 		IWDG_FeedDog();
-		LED_SetUsage(0);
+		LED_SetUsage(LED_USAGE_TIMER, 0);
 	}
 }

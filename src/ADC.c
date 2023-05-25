@@ -1,6 +1,7 @@
 #include "ADC.h"
 #include "Timer.h"
 #include "COM.h"
+#include "LED.h"
 #include "LED_4x5.h"
 #include "OLED.h"
 
@@ -11,9 +12,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#define ADC_SIZE 768
+#define ADC_SIZE 256
 #define ADC_CHS 2
-static vu16 ADC1ConvertedValue[ADC_SIZE][ADC_CHS];
+
+static vu16 DMA_BUF[ADC_SIZE][ADC_CHS];
 
 static void _DMA_Init(void)
 {
@@ -22,7 +24,7 @@ static void _DMA_Init(void)
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
 	DMA_DeInit(DMA1_Channel1);
 	DMA_InitStructure.DMA_PeripheralBaseAddr = (u32) &ADC1->DR; // 外设基地址
-	DMA_InitStructure.DMA_MemoryBaseAddr = (u32) ADC1ConvertedValue; // 内存基地址
+	DMA_InitStructure.DMA_MemoryBaseAddr = (u32) DMA_BUF; // 内存基地址
 	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC; // 数据传输从外设到内存
 	DMA_InitStructure.DMA_BufferSize = ADC_SIZE * ADC_CHS; // DMA缓存
 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable; // 外设地址不变
@@ -166,20 +168,43 @@ void fft(complex_t *v, int n, complex_t *tmp) {
 #endif
 
 vu16 adc_val = 0;
-vu8 adc_is_draw = 0;
 static u32 msec = 0;
 static u16 maxs[ADC_CHS];
+static vu16 DMA_DATA[ADC_SIZE][ADC_CHS];
+static u8 is_new_data = 0;
 
 void DMA1_Channel1_IRQHandler(void)
 {
-	u8 ch, x, y, x1, x2, redraw = !adc_is_draw;
-	u16 i, vols[ADC_CHS], max, v, vals[ADC_CHS];
+	if(!is_new_data)
+	{
+		memcpy((void*) DMA_DATA, (void*) DMA_BUF, sizeof(DMA_BUF));
+		is_new_data = 1;
+	}
+	
+	DMA_ClearITPendingBit(DMA1_IT_TC1);
+	DMA_ClearFlag(DMA1_FLAG_TC1);
+}
+
+void ADC1_Process(void)
+{
 	static u16 maxs[ADC_CHS] = {0, 0};
 	static u32 msec = 0;
-	u32 ms = milliseconds / 500, is_dot = (ms / 20) % 2;
+	
+	char buf[24];
+	u8 ch, x, y, x1, x2;
+	u16 i, vols[ADC_CHS], max, v, vals[ADC_CHS];
+	u32 ms = milliseconds, is_dot;
+	
 #ifdef USE_FFT
 	complex_t fft_val[128], fft_res[128];
 #endif
+	
+	if(!is_new_data) return;
+	
+	LED_SetUsage(LED_USAGE_ADC, 1);
+	
+	ms = milliseconds / 500;
+	is_dot = (ms / 20) % 2;
 	
 	if(msec != ms)
 	{
@@ -187,25 +212,19 @@ void DMA1_Channel1_IRQHandler(void)
 		for(i = 0; i < ADC_CHS; i ++) maxs[i] = 0;
 	}
 	
-	if(redraw)
-	{
-		OLED_DrawClear();
-		OLED_DrawLine(0, 15, 127, 15);
-	}
+	OLED_DrawClear();
+	OLED_DrawLine(0, 15, 127, 15);
 	
 	for(ch = 0; ch < ADC_CHS; ch ++)
 	{
 		max = 0;
-		if(redraw)
-		{
-			y = DRAW_POS + (DRAW_SZ * ch) + DRAW_LN;
-		}
+		y = DRAW_POS + (DRAW_SZ * ch) + DRAW_LN;
 		for(i = 0; i < ADC_SIZE; i ++)
 		{
-			s32 val = ADC1ConvertedValue[i][ch] - 2048;
-			if(redraw && i < 128)
+			s32 val = DMA_DATA[i][ch] - 2048;
+			if(i < 128)
 			{
-				s16 v = (val * DRAW_LN * 3300 / 4095 / 1600);
+				s16 v = (val * DRAW_LN * 3300 / (4095 * 1600));
 				if(is_dot) OLED_DrawDot(i, y - v, 1);
 				else OLED_DrawLine(i, y, i, y - v);
 				
@@ -253,36 +272,35 @@ void DMA1_Channel1_IRQHandler(void)
 			}
 		}
 		
-		if(redraw)
+		sprintf(buf, "CH%u: %3d", ch + 1, vals[ch]);
+		OLED_DrawStr(ch * 64, 0, buf, 1);
+		v = vals[ch] * 63 / 100;
+		for(x = 0; x < v; x ++)
 		{
-			char buf[24];
-			sprintf(buf, "CH%u: %3d", ch + 1, vals[ch]);
-			OLED_DrawStr(ch * 64, 0, buf, 1);
-			v = vals[ch] * 63 / 100;
-			for(x = 0; x < v; x ++)
-			{
-				OLED_DrawSet(x + 64 * ch, 1, 0xff);
-			}
-		#ifdef USE_FFT
-			fft(fft_val, 128, fft_res);
-			for(x = 0; x < 64; x ++)
-			{
-				complex_t *fv = &fft_val[x];
-				u8 v = sqrtf(fv->real * fv->real + fv->imag * fv->imag) * 2.0f;
-				if(v > 8) v = 8;
-				OLED_DrawSet(x + 64 * ch, 2, (0xff << (8 - v)));
-			}
-			// OLED_DrawLine(0, 23, 127, 23);
-		#endif
+			OLED_DrawSet(x + 64 * ch, 1, 0xff);
 		}
+	#ifdef USE_FFT
+		fft(fft_val, 128, fft_res);
+		for(x = 0; x < 64; x ++)
+		{
+			complex_t *fv = &fft_val[x];
+			u8 v = sqrtf(fv->real * fv->real + fv->imag * fv->imag) * 2.0f;
+			if(v > 8) v = 8;
+			OLED_DrawSet(x + 64 * ch, 2, (0xff << (8 - v)));
+		}
+		// OLED_DrawLine(0, 23, 127, 23);
+	#endif
 	}
 	
 	adc_val = ((maxs[0] / 10) * 100) + (maxs[1] / 10);
 	
-	if(redraw) adc_is_draw = 1;
-	
 	COM_printf("[I][%u][ADC] %.3f %.3f %3u %3u\r\n", milliseconds, vols[0] / 1000.0f, vols[1] / 1000.0f, maxs[0], maxs[1]);
-
-	DMA_ClearITPendingBit(DMA1_IT_TC1);
-	DMA_ClearFlag(DMA1_FLAG_TC1);
+	
+	LED_SetUsage(LED_USAGE_OLED, 1);
+	OLED_DrawRefresh();
+	LED_SetUsage(LED_USAGE_OLED, 0);
+	
+	LED_SetUsage(LED_USAGE_ADC, 0);
+	
+	is_new_data = 0;
 }

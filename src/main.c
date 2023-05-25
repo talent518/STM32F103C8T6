@@ -30,20 +30,11 @@ int main(void)
 	
 	COM_SetStatus(1);
 	
-	while(1)
-	{
-		u32 msec = milliseconds;
-		
-		if(is_oled && msec > 200)
-		{
-			is_oled = 0;
-			OLED_Config();
-		}
-		
-		if(adc_is_draw && msec > 3000)
-		{
-			OLED_DrawRefresh();
-			adc_is_draw = 0;
-		}
-	}
+	while(milliseconds < 200);
+	
+	OLED_Config();
+
+	while(milliseconds < 3000);
+	
+	while(1) ADC1_Process();
 }
