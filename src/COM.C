@@ -107,7 +107,7 @@ void COM_SetStatus(u8 status)
 	TX_BUF_ST = status;
 }
 
-void DMA_SendData(void)
+void COM_DMA_SendData(void)
 {
 	u16 n;
 	
@@ -329,7 +329,7 @@ void DMA1_Channel4_IRQHandler(void)
 		DMA_SetCurrDataCounter(DMA1_Channel4, 0); // 清除数据长度
 		
 		TX_BUF_WAIT = 0;
-		DMA_SendData();
+		COM_DMA_SendData();
 	}
 }
 
@@ -482,7 +482,7 @@ u8 COM_SendData(u8* buf, u16 len)
 		
 		if(TX_CNT > DMA_TX_SIZE)
 		{
-			DMA_SendData();
+			COM_DMA_SendData();
 		}
 		
 		return n;

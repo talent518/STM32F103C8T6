@@ -46,7 +46,7 @@ void COM_printf(const char *format, ...) __attribute__ ((format(printf, 1, 2)));
 #define LOGV(fmt, args...) LOGX("[V]", 5, fmt, ##args)
 
 void COM_RunCmd(void);
-void DMA_SendData(void);
+void COM_DMA_SendData(void);
 
 void cmd_help(char *argv[], u8 argc);
 void cmd_rtc(char *argv[], u8 argc);

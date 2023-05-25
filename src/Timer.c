@@ -73,8 +73,6 @@ void TIM2_IRQHandler(void)
 			KEY_Display();
 		}
 		
-		COM_RunCmd();
-		
 		if(n % 100 == 0)
 		{
 			if(is_alarm)
@@ -104,8 +102,6 @@ void TIM2_IRQHandler(void)
 			COM_ClearLine = 1;
 		}
 		
-		DMA_SendData();
-		IWDG_FeedDog();
 		LED_SetUsage(LED_USAGE_TIMER, 0);
 	}
 }

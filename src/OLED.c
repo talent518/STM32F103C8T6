@@ -292,6 +292,115 @@ void OLED_DrawRefresh(void)
 	}
 }
 
+static u8 wba_addr, wba_data, wba_async = 0;
+static void OLED_WriteByteAsync(void)
+{
+	static u8 index = 0;
+	
+	if(!wba_async) return;
+	
+	switch(index)
+	{
+		case 0: // i2c1 is busy
+			if(I2C_GetFlagStatus(I2C1, I2C_FLAG_BUSY)) break;
+			index = 1;
+		case 1: // i2c1 start
+			I2C_GenerateSTART(I2C1, ENABLE);
+			index = 2;
+		case 2: // i2c1 master select
+			if(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT)) break;
+			index = 3;
+		case 3: // i2c1 send address
+			I2C_Send7bitAddress(I2C1, OLED_ADDR, I2C_Direction_Transmitter);
+			index = 4;
+		case 4: // i2c1 master transmitter selected
+			if(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) break;
+			index = 5;
+		case 5: // i2c1 send addr
+			I2C_SendData(I2C1, wba_addr);
+			index = 6;
+		case 6: // i2c1 address transmitted
+			if(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) break;
+			index = 7;
+		case 7: // i2c1 send data
+			I2C_SendData(I2C1, wba_data);
+			index = 8;
+		case 8: // i2c1 data transmitted
+			if(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) break;
+			index = 9;
+		case 9: // i2c1 stop
+			I2C_GenerateSTOP(I2C1, ENABLE);
+		default:
+			index = 0;
+			wba_async = 0;
+			break;
+	}
+}
+
+u8 oled_is_async = 0;
+void OLED_DrawRefreshAsync(void)
+{
+	static u8 index = 0, i, n;
+	
+	if(!oled_is_async) return;
+	
+	switch(index)
+	{
+		case 0:
+			i = 0;
+			n = 0;
+			index = 1;
+		case 1: // for i
+			wba_addr = 0x00;
+			wba_data = 0xb0 + i;
+			wba_async = 1;
+			index = 2;
+		case 2: // page address
+			OLED_WriteByteAsync();
+			if(wba_async) break;
+			index = 3;
+			wba_addr = 0x00;
+			wba_data = 0x00;
+			wba_async = 1;
+		case 3: // low address
+			OLED_WriteByteAsync();
+			if(wba_async) break;
+			index = 4;
+			wba_addr = 0x00;
+			wba_data = 0x10;
+			wba_async = 1;
+		case 4: // high address
+			OLED_WriteByteAsync();
+			if(wba_async) break;
+			index = 5;
+			n = 0;
+		case 5: // for n
+			wba_addr = 0x40;
+			wba_data = OLED_GRAM[n][i];
+			wba_async = 1;
+			index = 6;
+		case 6:
+			OLED_WriteByteAsync();
+			if(wba_async) break;
+			if((++ n) < 128)
+			{
+				wba_addr = 0x40;
+				wba_data = OLED_GRAM[n][i];
+				wba_async = 1;
+				break;
+			}
+			if(++i < 8)
+			{
+				index = 1;
+				break;
+			}
+		default:
+			index = 0;
+			oled_is_async = 0;
+			break;
+	}
+}
+
 u8 OLED_DrawGet(u8 x, u8 y)
 {
 	return OLED_GRAM[x][y];

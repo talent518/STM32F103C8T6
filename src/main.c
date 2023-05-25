@@ -15,6 +15,7 @@
 int main(void)
 {
 	u8 is_oled = 1;
+	u32 ms = 0, msec;
 	
 	SysTick_Init(72);
 	LED_Init();
@@ -25,7 +26,6 @@ int main(void)
 	ADC1_Init();
 	OLED_Init();
 	
-	IWDG_Init(); // 窗口看门狗初始化函数
 	Timer_Init(1000-1); // 设置1ms计时器
 	
 	COM_SetStatus(1);
@@ -36,5 +36,14 @@ int main(void)
 
 	while(milliseconds < 3000);
 	
-	while(1) ADC1_Process();
+	IWDG_Init(); // 窗口看门狗初始化函数
+	
+	while(1)
+	{
+		ADC1_Process();
+		
+		COM_RunCmd();
+		COM_DMA_SendData();
+		IWDG_FeedDog();
+	}
 }

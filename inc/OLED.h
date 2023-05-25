@@ -26,4 +26,7 @@ void OLED_DrawLine(u8 x1, u8 y1, u8 x2, u8 y2);
 void OLED_DrawStr(u8 x, u8 y, char ch[], u8 TextSize);
 void OLED_DrawCN(u8 x, u8 y, u8 N);
 
+extern u8 oled_is_async;
+void OLED_DrawRefreshAsync(void);
+
 #endif

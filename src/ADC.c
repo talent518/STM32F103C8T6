@@ -191,7 +191,7 @@ void ADC1_Process(void)
 	static u32 msec = 0;
 	
 	char buf[24];
-	u8 ch, x, y, x1, x2;
+	u8 ch, x, y, x1, x2, redraw;
 	u16 i, vols[ADC_CHS], max, v, vals[ADC_CHS];
 	u32 ms = milliseconds, is_dot;
 	
@@ -199,12 +199,15 @@ void ADC1_Process(void)
 	complex_t fft_val[128], fft_res[128];
 #endif
 	
+	OLED_DrawRefreshAsync();
+	
 	if(!is_new_data) return;
 	
 	LED_SetUsage(LED_USAGE_ADC, 1);
 	
 	ms = milliseconds / 500;
 	is_dot = (ms / 20) % 2;
+	redraw = !oled_is_async;
 	
 	if(msec != ms)
 	{
@@ -212,8 +215,13 @@ void ADC1_Process(void)
 		for(i = 0; i < ADC_CHS; i ++) maxs[i] = 0;
 	}
 	
-	OLED_DrawClear();
-	OLED_DrawLine(0, 15, 127, 15);
+	if(redraw)
+	{
+		LED_SetUsage(LED_USAGE_OLED, 1);
+
+		OLED_DrawClear();
+		OLED_DrawLine(0, 15, 127, 15);
+	}
 	
 	for(ch = 0; ch < ADC_CHS; ch ++)
 	{
@@ -222,7 +230,7 @@ void ADC1_Process(void)
 		for(i = 0; i < ADC_SIZE; i ++)
 		{
 			s32 val = DMA_DATA[i][ch] - 2048;
-			if(i < 128)
+			if(redraw && i < 128)
 			{
 				s16 v = (val * DRAW_LN * 3300 / (4095 * 1600));
 				if(is_dot) OLED_DrawDot(i, y - v, 1);
@@ -272,33 +280,40 @@ void ADC1_Process(void)
 			}
 		}
 		
-		sprintf(buf, "CH%u: %3d", ch + 1, vals[ch]);
-		OLED_DrawStr(ch * 64, 0, buf, 1);
-		v = vals[ch] * 63 / 100;
-		for(x = 0; x < v; x ++)
+		if(redraw)
 		{
-			OLED_DrawSet(x + 64 * ch, 1, 0xff);
+			sprintf(buf, "CH%u: %3d", ch + 1, vals[ch]);
+			OLED_DrawStr(ch * 64, 0, buf, 1);
+			v = vals[ch] * 63 / 100;
+			for(x = 0; x < v; x ++)
+			{
+				OLED_DrawSet(x + 64 * ch, 1, 0xff);
+			}
+		#ifdef USE_FFT
+			fft(fft_val, 128, fft_res);
+			for(x = 0; x < 64; x ++)
+			{
+				complex_t *fv = &fft_val[x];
+				u8 v = sqrtf(fv->real * fv->real + fv->imag * fv->imag) * 2.0f;
+				if(v > 8) v = 8;
+				OLED_DrawSet(x + 64 * ch, 2, (0xff << (8 - v)));
+			}
+			// OLED_DrawLine(0, 23, 127, 23);
+		#endif
 		}
-	#ifdef USE_FFT
-		fft(fft_val, 128, fft_res);
-		for(x = 0; x < 64; x ++)
-		{
-			complex_t *fv = &fft_val[x];
-			u8 v = sqrtf(fv->real * fv->real + fv->imag * fv->imag) * 2.0f;
-			if(v > 8) v = 8;
-			OLED_DrawSet(x + 64 * ch, 2, (0xff << (8 - v)));
-		}
-		// OLED_DrawLine(0, 23, 127, 23);
-	#endif
 	}
 	
 	adc_val = ((maxs[0] / 10) * 100) + (maxs[1] / 10);
 	
 	COM_printf("[I][%u][ADC] %.3f %.3f %3u %3u\r\n", milliseconds, vols[0] / 1000.0f, vols[1] / 1000.0f, maxs[0], maxs[1]);
 	
-	LED_SetUsage(LED_USAGE_OLED, 1);
-	OLED_DrawRefresh();
-	LED_SetUsage(LED_USAGE_OLED, 0);
+	if(redraw)
+	{
+		LED_SetUsage(LED_USAGE_OLED, 0);
+		
+		oled_is_async = 1;
+		OLED_DrawRefreshAsync();
+	}
 	
 	LED_SetUsage(LED_USAGE_ADC, 0);
 	
