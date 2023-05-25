@@ -192,11 +192,14 @@ void ADC1_Process(void)
 	
 	char buf[24];
 	u8 ch, x, y, x1, x2, redraw;
-	u16 i, vols[ADC_CHS], max, v, vals[ADC_CHS];
+	u16 i, max, v, vals[ADC_CHS];
 	u32 ms = milliseconds, is_dot;
 	
 #ifdef USE_FFT
 	complex_t fft_val[128], fft_res[128];
+#endif
+#ifdef ADC_DBG
+	u16 vols[ADC_CHS];
 #endif
 	
 	OLED_DrawRefreshAsync();
@@ -247,7 +250,9 @@ void ADC1_Process(void)
 		}
 		
 		v = max * 3300 / 4095;
+	#ifdef ADC_DBG
 		vols[ch] = v;
+	#endif
 		
 		if(v < 200) v = 0;
 		else v -= 200;
@@ -305,7 +310,9 @@ void ADC1_Process(void)
 	
 	adc_val = ((maxs[0] / 10) * 100) + (maxs[1] / 10);
 	
+#ifdef ADC_DBG
 	COM_printf("[I][%u][ADC] %.3f %.3f %3u %3u\r\n", milliseconds, vols[0] / 1000.0f, vols[1] / 1000.0f, maxs[0], maxs[1]);
+#endif
 	
 	if(redraw)
 	{
