@@ -11,6 +11,47 @@
 
 #include "main.h"
 
+static void Timer_Process(void)
+{
+	static u16 n = 0, alarm = 0;
+	static const char *weeks[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+	
+	n ++;
+	
+	if(n >= 1000)
+	{
+		n = 0;
+	}
+	
+	if(n % 20 == 0)
+	{
+		KEY_Display();
+	}
+	
+	if(n % 100 == 0)
+	{
+		if(is_alarm)
+		{
+			if(++alarm >= 100)
+			{
+				is_alarm = 0;
+				alarm = 0;
+				LED_SetAlarm(0);
+			}
+			else
+			{
+				LED_SetAlarm(alarm % 2);
+			}
+		}
+		
+		RTC_Get(); // 更新时间
+		
+		COM_ClearLine = 0;
+		COM_printf("\033[2KRTC: %u-%02u-%02u %s %02u:%02u:%02u.%u\r", calendar.year, calendar.month, calendar.day, weeks[calendar.week], calendar.hour, calendar.min, calendar.sec, calendar.msec / 100);
+		COM_ClearLine = 1;
+	}
+}
+
 //主机端程序
 int main(void)
 {
@@ -42,8 +83,15 @@ int main(void)
 	{
 		ADC1_Process();
 		
-		COM_RunCmd();
-		COM_DMA_SendData();
-		IWDG_FeedDog();
+		msec = milliseconds;
+		if(msec != ms)
+		{
+			ms = msec;
+			
+			COM_RunCmd();
+			Timer_Process();
+			COM_DMA_SendData();
+			IWDG_FeedDog();
+		}
 	}
 }

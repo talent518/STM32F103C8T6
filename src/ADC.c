@@ -4,6 +4,7 @@
 #include "LED.h"
 #include "LED_4x5.h"
 #include "OLED.h"
+#include "RTC.h"
 
 #include <stm32f10x_dma.h>
 #include <stm32f10x_adc.h>
@@ -11,6 +12,7 @@
 #include <stm32f10x_rcc.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #define ADC_SIZE 256
 #define ADC_CHS 2
@@ -104,8 +106,6 @@ void ADC1_Init(void)
 }
 
 #ifdef USE_FFT
-#include <math.h>
-
 typedef struct {
 	float real;
 	float imag;
@@ -188,7 +188,8 @@ void DMA1_Channel1_IRQHandler(void)
 void ADC1_Process(void)
 {
 	static u16 maxs[ADC_CHS] = {0, 0};
-	static u32 msec = 0;
+	static u32 msec = 0, msec_oled = 0;
+	static u8 fps = 0;
 	
 	char buf[24];
 	u8 ch, x, y, x1, x2, redraw;
@@ -220,10 +221,16 @@ void ADC1_Process(void)
 	
 	if(redraw)
 	{
+		ms = milliseconds;
+		if(msec_oled) fps = (1000.0f / (float) (ms - msec_oled)) + 0.5f;
+		msec_oled = ms;
+		
 		LED_SetUsage(LED_USAGE_OLED, 1);
 
 		OLED_DrawClear();
-		OLED_DrawLine(0, 15, 127, 15);
+		for(i = 0; i < 128; i += 16) OLED_DrawSet(i, 1, 0x80);
+		OLED_DrawSet(0, 1, 0xff);
+		OLED_DrawSet(64, 1, 0xff);
 	}
 	
 	for(ch = 0; ch < ADC_CHS; ch ++)
@@ -287,12 +294,12 @@ void ADC1_Process(void)
 		
 		if(redraw)
 		{
-			sprintf(buf, "CH%u: %3d", ch + 1, vals[ch]);
-			OLED_DrawStr(ch * 64, 0, buf, 1);
+			sprintf(buf, "%c%03d", (ch ? 'R' : 'L'), vals[ch]);
+			OLED_DrawStr(ch * 30, 0, buf, 1);
 			v = vals[ch] * 63 / 100;
 			for(x = 0; x < v; x ++)
 			{
-				OLED_DrawSet(x + 64 * ch, 1, 0xff);
+				OLED_DrawSet(x + 64 * ch, 1, 0xaa);
 			}
 		#ifdef USE_FFT
 			fft(fft_val, 128, fft_res);
@@ -316,6 +323,11 @@ void ADC1_Process(void)
 	
 	if(redraw)
 	{
+		sprintf(buf, "%02u%02u%02u", calendar.hour, calendar.min, calendar.sec);
+		OLED_DrawStr(92, 0, buf, 1);
+		sprintf(buf, "F%02u", fps % 100);
+		OLED_DrawStr(64, 0, buf, 1);
+		
 		LED_SetUsage(LED_USAGE_OLED, 0);
 		
 		oled_is_async = 1;
