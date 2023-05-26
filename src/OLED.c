@@ -27,7 +27,7 @@ void OLED_Init(void)
 	I2C_InitStructure.I2C_OwnAddress1 = 0xf0;//主机的I2C地址,随便写的
 	I2C_InitStructure.I2C_Ack = I2C_Ack_Enable;
 	I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-	I2C_InitStructure.I2C_ClockSpeed = 800000;//800KHz
+	I2C_InitStructure.I2C_ClockSpeed = 1000000;//1MHz
 
 	I2C_Cmd(I2C1, ENABLE);
 	I2C_Init(I2C1, &I2C_InitStructure);

@@ -209,6 +209,8 @@ void ADC1_Process(void)
 		DMA_SetCurrDataCounter(DMA1_Channel1, ADC_SIZE * ADC_CHS);
 		DMA_Cmd(DMA1_Channel1, ENABLE);
 	#endif
+
+		LED_SetUsage(LED_USAGE_OLED, 0);
 		
 		v = (milliseconds - msec_oled);
 		runsum += v;
@@ -242,8 +244,6 @@ void ADC1_Process(void)
 	if(redraw)
 	{
 		msec_oled = milliseconds;
-		
-		LED_SetUsage(LED_USAGE_OLED, 1);
 
 		OLED_DrawClear();
 		for(i = 0; i < 128; i += 16) OLED_DrawSet(i, 1, 0x80);
@@ -355,7 +355,7 @@ void ADC1_Process(void)
 		sprintf(buf, "F%02u.%u", fps / 10, fps % 10);
 		OLED_DrawStr(61, 0, buf, 1);
 		
-		LED_SetUsage(LED_USAGE_OLED, 0);
+		LED_SetUsage(LED_USAGE_OLED, 1);
 		
 		oled_is_async = 1;
 		OLED_DrawRefreshAsync();
