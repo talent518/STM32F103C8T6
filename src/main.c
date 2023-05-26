@@ -64,7 +64,6 @@ int main(void)
 	COM_Init(230400);
 	HC595_Init();
 	KEY_Init();
-	ADC1_Init();
 	OLED_Init();
 	
 	Timer_Init(1000-1); // 设置1ms计时器
@@ -77,6 +76,7 @@ int main(void)
 
 	while(milliseconds < 3000);
 	
+	ADC1_Init();
 	IWDG_Init(); // 窗口看门狗初始化函数
 	
 	while(1)

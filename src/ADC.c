@@ -15,7 +15,7 @@
 #include <string.h>
 #include <math.h>
 
-#define ADC_SIZE 256
+#define ADC_SIZE 128
 #define ADC_CHS 2
 
 static vu16 DMA_BUF[ADC_SIZE][ADC_CHS];
@@ -34,7 +34,11 @@ static void _DMA_Init(void)
 	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable; // 内存地址递增
 	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord; //外设数据16位
 	DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord; // 内存地址1位
+#ifdef USE_ADC_NORMAL
+	DMA_InitStructure.DMA_Mode = DMA_Mode_Normal; // 单次工作模式
+#else
 	DMA_InitStructure.DMA_Mode = DMA_Mode_Circular; // 循环工作模式
+#endif
 	DMA_InitStructure.DMA_Priority = DMA_Priority_High;	// 高优先级
 	DMA_InitStructure.DMA_M2M = DMA_M2M_Disable; // 没有设置内存到内存传输
 	DMA_Init(DMA1_Channel1, &DMA_InitStructure);
@@ -82,23 +86,23 @@ static void _ADC_Init(void)
 
 static void _NVIC_Init(void)
 {
-       NVIC_InitTypeDef NVIC_InitStructure;
-   
-        /* Configure the NVIC Preemption Priority Bits */  
-       NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
-        
-        NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-        NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-        NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_InitTypeDef NVIC_InitStructure;
 
-        NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel1_IRQn;
-        NVIC_Init(&NVIC_InitStructure);        
+	/* Configure the NVIC Preemption Priority Bits */  
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
+
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+
+	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel1_IRQn;
+	NVIC_Init(&NVIC_InitStructure);
 }
 
 void ADC1_Init(void)
 {
-	_DMA_Init();
 	_ADC_Init();
+	_DMA_Init();
 	_NVIC_Init();
 	
 	DMA_Cmd(DMA1_Channel1, ENABLE); // 启动DMA通道
@@ -177,11 +181,12 @@ void DMA1_Channel1_IRQHandler(void)
 	DMA_ClearFlag(DMA1_FLAG_TC1);
 }
 
+#define RUNC 32
 void ADC1_Process(void)
 {
-	static u16 maxs[ADC_CHS] = {0, 0};
-	static u32 msec = 0, msec_oled = 0;
-	static u8 fps = 0;
+	static u16 maxs[ADC_CHS] = {0, 0}, runs[RUNC], runi = 0, runc = 0;
+	static u32 msec = 0, msec_oled = 0, runsum = 0;
+	static u16 fps = 0;
 	
 	char buf[24];
 	u8 ch, x, y, x1, x2, redraw;
@@ -193,7 +198,32 @@ void ADC1_Process(void)
 	u16 vols[ADC_CHS];
 #endif
 	
+	u8 is_async = oled_is_async;
+	
 	OLED_DrawRefreshAsync();
+	
+	if(is_async && !oled_is_async)
+	{
+	#ifdef USE_ADC_NORMAL
+		DMA_Cmd(DMA1_Channel1, DISABLE);
+		DMA_SetCurrDataCounter(DMA1_Channel1, ADC_SIZE * ADC_CHS);
+		DMA_Cmd(DMA1_Channel1, ENABLE);
+	#endif
+		
+		v = (milliseconds - msec_oled);
+		runsum += v;
+		if(runc < RUNC)
+		{
+			runc ++;
+		}
+		else
+		{
+			runsum -= runs[runi];
+		}
+		runs[runi++] = v;
+		if(runi == RUNC) runi = 0;
+		fps = (10000 * runc) / runsum;
+	}
 	
 	if(!is_new_data) return;
 	
@@ -211,9 +241,7 @@ void ADC1_Process(void)
 	
 	if(redraw)
 	{
-		ms = milliseconds;
-		if(msec_oled) fps = (1000.0f / (float) (ms - msec_oled)) + 0.5f;
-		msec_oled = ms;
+		msec_oled = milliseconds;
 		
 		LED_SetUsage(LED_USAGE_OLED, 1);
 
@@ -322,10 +350,10 @@ void ADC1_Process(void)
 	
 	if(redraw)
 	{
-		sprintf(buf, "%02u%02u%02u", calendar.hour, calendar.min, calendar.sec);
-		OLED_DrawStr(92, 0, buf, 1);
-		sprintf(buf, "F%02u", fps % 100);
-		OLED_DrawStr(64, 0, buf, 1);
+		sprintf(buf, "%02u:%02u", calendar.hour, calendar.min);
+		OLED_DrawStr(98, 0, buf, 1);
+		sprintf(buf, "F%02u.%u", fps / 10, fps % 10);
+		OLED_DrawStr(61, 0, buf, 1);
 		
 		LED_SetUsage(LED_USAGE_OLED, 0);
 		

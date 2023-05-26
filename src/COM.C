@@ -150,7 +150,7 @@ void COM_DMA_SendData(void)
 
 void COM_RunCmd(void)
 {
-	static char buf[RX_SIZE];
+	char buf[RX_SIZE];
 	
 	char *argv[16];
 	u8 argc;
@@ -235,7 +235,7 @@ void USART1_IRQHandler(void)
 	{
 		u16 n, n2;
 		char *p, *p2, *p3, *buf;
-		static char rxBuf[DMA_RX_SIZE];
+		char rxBuf[DMA_RX_SIZE];
 		
 		USART1->SR;USART1->DR; // 必须的，不然会导致IDLE中断清除不掉问题
 		USART_ClearITPendingBit(USART1, USART_IT_IDLE); // 清空闲标志位
@@ -501,7 +501,7 @@ u8 COM_SendData(u8* buf, u16 len)
 
 void COM_printf(const char *format, ...)
 {
-	static char buf[256];
+	char buf[256];
 	u16 n;
 	va_list ap;
 	

@@ -342,6 +342,7 @@ void OLED_DrawRefreshAsync(void)
 {
 	static u8 index = 0, i, n;
 	
+	if(!is_cfged) return;
 	if(!oled_is_async) return;
 	
 	switch(index)
