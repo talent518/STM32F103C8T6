@@ -5,6 +5,7 @@
 #include "LED_4x5.h"
 #include "OLED.h"
 #include "RTC.h"
+#include "KEY.h"
 
 #include <stm32f10x_dma.h>
 #include <stm32f10x_adc.h>
@@ -105,7 +106,6 @@ void ADC1_Init(void)
 	DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, ENABLE);
 }
 
-#ifdef USE_FFT
 typedef struct {
 	float real;
 	float imag;
@@ -158,14 +158,6 @@ void fft(complex_t *v, int n, complex_t *tmp) {
 		v[m+n/2].imag = ve[m].imag - z.imag;
 	}
 }
-#define DRAW_POS 24
-#define DRAW_SZ 20
-#define DRAW_LN 10
-#else
-#define DRAW_POS 16
-#define DRAW_SZ 24
-#define DRAW_LN 12
-#endif
 
 vu16 adc_val = 0;
 static u32 msec = 0;
@@ -195,10 +187,8 @@ void ADC1_Process(void)
 	u8 ch, x, y, x1, x2, redraw;
 	u16 i, max, v, vals[ADC_CHS];
 	u32 ms = milliseconds, is_dot;
-	
-#ifdef USE_FFT
 	complex_t fft_val[128], fft_res[128];
-#endif
+	
 #ifdef ADC_DBG
 	u16 vols[ADC_CHS];
 #endif
@@ -236,21 +226,29 @@ void ADC1_Process(void)
 	for(ch = 0; ch < ADC_CHS; ch ++)
 	{
 		max = 0;
-		y = DRAW_POS + (DRAW_SZ * ch) + DRAW_LN;
+		if(key_is_fft)
+		{
+			y = 24 + (20 * ch) + 10;
+		}
+		else
+		{
+			y = 16 + (24 * ch) + 12;
+		}
 		for(i = 0; i < ADC_SIZE; i ++)
 		{
 			s32 val = DMA_DATA[i][ch] - 2048;
 			if(redraw && i < 128)
 			{
-				s16 v = (val * DRAW_LN * 3300 / (4095 * 1600));
+				s16 v = (val * (key_is_fft ? 10 : 12) * 3300 / (4095 * 1600));
 				if(is_dot) OLED_DrawDot(i, y - v, 1);
 				else OLED_DrawLine(i, y, i, y - v);
 				
-			#ifdef USE_FFT
-				complex_t *fv = &fft_val[i];
-				fv->real = val / 2048.0f;
-				fv->imag = 0;
-			#endif
+				if(key_is_fft)
+				{
+					complex_t *fv = &fft_val[i];
+					fv->real = val / 2048.0f;
+					fv->imag = 0;
+				}
 			}
 			if(val < 0) val = -val;
 			if(val > max) max = val;
@@ -301,17 +299,18 @@ void ADC1_Process(void)
 			{
 				OLED_DrawSet(x + 64 * ch, 1, 0xaa);
 			}
-		#ifdef USE_FFT
-			fft(fft_val, 128, fft_res);
-			for(x = 0; x < 64; x ++)
+			if(key_is_fft)
 			{
-				complex_t *fv = &fft_val[x];
-				u8 v = sqrtf(fv->real * fv->real + fv->imag * fv->imag) * 2.0f;
-				if(v > 8) v = 8;
-				OLED_DrawSet(x + 64 * ch, 2, (0xff << (8 - v)));
+				fft(fft_val, 128, fft_res);
+				for(x = 0; x < 64; x ++)
+				{
+					complex_t *fv = &fft_val[x];
+					u8 v = sqrtf(fv->real * fv->real + fv->imag * fv->imag) * 2.0f;
+					if(v > 8) v = 8;
+					OLED_DrawSet(x + 64 * ch, 2, (0xff << (8 - v)));
+				}
+				// OLED_DrawLine(0, 23, 127, 23);
 			}
-			// OLED_DrawLine(0, 23, 127, 23);
-		#endif
 		}
 	}
 	

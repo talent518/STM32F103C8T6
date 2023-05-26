@@ -35,9 +35,16 @@
   * SCLK: B4
 
 * TM1638: 8位数码管显示、8个LED显示、8个按键输入
-  * STB: A5
-  * CLK: A4
-  * DIO: A3
+  * GPIO:
+    * STB: A5
+    * CLK: A4
+    * DIO: A3
+  * 按键:
+    * 1: S1
+    * 2: S2
+    * 3: LED流水模式
+    * 4: ADC FFT开关
+    * 5~8: 切换LED
 
 * ADC: 模拟声音采集
   * Channel8: B0

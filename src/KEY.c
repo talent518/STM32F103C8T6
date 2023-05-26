@@ -5,6 +5,8 @@
 #include "Timer.h"
 #include "COM.h"
 
+u8 key_is_fft = 0;
+
 void KEY_Init(void) {
 	TM1638_Init();
 	
@@ -33,7 +35,7 @@ static void display2(u8 i, u8 n, u8 *old) {
 
 void KEY_Display(void) {
 	static u8 week = 0x10, hours[2] = {0x10, 0x10}, mins[2] = {0x10, 0x10}, secs[2] = {0x10, 0x10}, msec = 0x10;
-	static u8 led = 0, oldkey = 0xff, key = 0, knot = 1, leds[4] = {0, 0, 0, 0}, leddir = 0, ledmode = 0, s1 = 0, s2 = 0;
+	static u8 led = 0, oldkey = 0xff, key = 0, knot = 1, leds[4] = {0, 0, 0, 0}, ledmode = 0, s1 = 0, s2 = 0;
 	u8 i, j;
 	
 	// ######## SEG ########
@@ -91,11 +93,15 @@ void KEY_Display(void) {
 						if(j >= 2) for(i = 0; i < 4; i ++) TM1638_Display_LED(i, s1);
 						for(i = 4; i < 8; i ++) TM1638_Display_LED(i, s2);
 						break;
-					case 2: // LED Direction Swith
-						if(j >= 2 && j <= 3) leddir = !leddir;
+					case 2: // LED Swith
+						if(j == 2)
+						{
+							ledmode ++;
+							if(ledmode >= 4) ledmode = 0;
+						}
 						break;
-					case 3: // LED Mode Switch
-						if(j >= 2 && j <= 3) ledmode = !ledmode;
+					case 3: // ADC is fft
+						key_is_fft = !key_is_fft;
 						break;
 				}
 			}
@@ -104,20 +110,29 @@ void KEY_Display(void) {
 	
 	// ######## LED ########
 	
-	if(key >= 2 && key <= 3) {
+	if(key == 2) {
 		i = ((32767 - RTC_GetDivider()) * 1000 / 32767) / 125;
-		if(leddir) i = 7 - i;
-		if(i != led) {
-			if(ledmode) {
-				TM1638_Display_LED(led, OFF);
-				TM1638_Display_LED(i, ON);
-			} else {
-				TM1638_Display_LED(i, knot);
-				if(leddir) {
-					if(i == 0) knot = !knot;
-				} else {
+		if(i != led)
+		{
+			switch(ledmode)
+			{
+				case 0:
+					TM1638_Display_LED(led, OFF);
+					TM1638_Display_LED(i, ON);
+					break;
+				case 1:
+					TM1638_Display_LED(i, knot);
 					if(i == 7) knot = !knot;
-				}
+					break;
+				case 2:
+					TM1638_Display_LED(7 - led, OFF);
+					TM1638_Display_LED(7 - i, ON);
+					break;
+				case 3:
+				default:
+					TM1638_Display_LED(7 - i, knot);
+					if(i == 7) knot = !knot;
+					break;
 			}
 			led = i;
 		}
