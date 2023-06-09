@@ -353,7 +353,8 @@ void ADC1_Process(void)
 	
 	if(redraw)
 	{
-		sprintf(buf, "%02u:%02u", calendar.hour, calendar.min);
+		
+		sprintf(buf, "%02u%c%02u", calendar.hour, msec % 2 ? ':' : ' ', calendar.min);
 		OLED_DrawStr(98, 0, buf, 1);
 		sprintf(buf, "F%02u.%u", fps / 10, fps % 10);
 		OLED_DrawStr(61, 0, buf, 1);
