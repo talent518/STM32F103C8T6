@@ -15,7 +15,7 @@
 #include <string.h>
 #include <math.h>
 
-#define ADC_SIZE 128
+#define ADC_SIZE 256
 #define ADC_CHS 2
 
 static vu16 DMA_BUF[ADC_SIZE][ADC_CHS];
@@ -164,8 +164,8 @@ void fft(complex_t *v, int n, complex_t *tmp) {
 }
 
 vu16 adc_val = 0;
-vu16 adc_min = 200;
-vu16 adc_max = 1400;
+u16 adc_min = 200;
+u16 adc_max = 1400;
 static u32 msec = 0;
 static u16 maxs[ADC_CHS];
 static vu16 DMA_DATA[ADC_SIZE][ADC_CHS];
@@ -270,7 +270,17 @@ void ADC1_Process(void)
 			s32 val = DMA_DATA[i][ch] - 2048;
 			if(redraw && i < 128)
 			{
-				s16 v = (val * (key_is_fft ? 10 : 12) * 3300 / (4095 * 1600));
+				s16 v = (val * (key_is_fft ? 10 : 12) * 3300 / (4095 * (adc_min + adc_max)));
+				if(key_is_fft)
+				{
+					if(v < -10) v = -10;
+					if(v > 10) v = 10;
+				}
+				else
+				{
+					if(v < -12) v = -12;
+					if(v > 12) v = 12;
+				}
 				if(is_dot) OLED_DrawDot(i, y - v, 1);
 				else OLED_DrawLine(i, y, i, y - v);
 				
