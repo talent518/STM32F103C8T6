@@ -4,6 +4,7 @@
 #include "LED.h"
 #include "Timer.h"
 #include "COM.h"
+#include "ADC.h"
 
 u8 key_is_fft = 0;
 
@@ -35,7 +36,7 @@ static void display2(u8 i, u8 n, u8 *old) {
 
 void KEY_Display(void) {
 	static u8 week = 0x10, hours[2] = {0x10, 0x10}, mins[2] = {0x10, 0x10}, secs[2] = {0x10, 0x10}, msec = 0x10;
-	static u8 led = 0, oldkey = 0xff, key = 0, knot = 1, leds[4] = {0, 0, 0, 0}, ledmode = 0, s1 = 0, s2 = 0;
+	static u8 led = 0, oldkey = 0xff, key = 0, knot = 1, ledmode = 0, s1 = 0, s2 = 0;
 	u8 i, j;
 	
 	// ######## SEG ########
@@ -66,44 +67,41 @@ void KEY_Display(void) {
 		if(i > 0 && i < 9) {
 			j = key;
 			key = i - 1;
-			if(key >= 4) {
-				i = key - 4;
-				if(j >= 4) leds[i] = !leds[i];
-				for(i = 0; i < 4; i ++) {
-					j = i * 2;
-					if(leds[i]) {
-						TM1638_Display_LED(j, ON);
-						TM1638_Display_LED(j + 1, OFF);
-					} else {
-						TM1638_Display_LED(j, OFF);
-						TM1638_Display_LED(j + 1, ON);
+			switch(key) {
+				case 0: // S1
+					if(j < 2) s1 = !s1;
+					LED_SetS1(s1);
+					for(i = 0; i < 4; i ++) TM1638_Display_LED(i, s1);
+					if(j >= 2) for(i = 4; i < 8; i ++) TM1638_Display_LED(i, s2);
+					break;
+				case 1: // S2
+					if(j < 2) s2 = !s2;
+					LED_SetS2(s2);
+					if(j >= 2) for(i = 0; i < 4; i ++) TM1638_Display_LED(i, s1);
+					for(i = 4; i < 8; i ++) TM1638_Display_LED(i, s2);
+					break;
+				case 2: // LED Swith
+					if(j == 2)
+					{
+						ledmode ++;
+						if(ledmode >= 4) ledmode = 0;
 					}
-				}
-			} else {
-				switch(key) {
-					case 0: // S1
-						if(j < 2) s1 = !s1;
-						LED_SetS1(s1);
-						for(i = 0; i < 4; i ++) TM1638_Display_LED(i, s1);
-						if(j >= 2) for(i = 4; i < 8; i ++) TM1638_Display_LED(i, s2);
-						break;
-					case 1: // S2
-						if(j < 2) s2 = !s2;
-						LED_SetS2(s2);
-						if(j >= 2) for(i = 0; i < 4; i ++) TM1638_Display_LED(i, s1);
-						for(i = 4; i < 8; i ++) TM1638_Display_LED(i, s2);
-						break;
-					case 2: // LED Swith
-						if(j == 2)
-						{
-							ledmode ++;
-							if(ledmode >= 4) ledmode = 0;
-						}
-						break;
-					case 3: // ADC is fft
-						key_is_fft = !key_is_fft;
-						break;
-				}
+					break;
+				case 3: // ADC is fft
+					key_is_fft = !key_is_fft;
+					break;
+				case 4: // ADC min+
+					if(adc_min + 10 <= adc_max) adc_min += 10;
+					break;
+				case 5: // ADC min-
+					if(adc_min > 10) adc_min -= 10;
+					break;
+				case 6: // ADC max+
+					if(adc_max + 10 < 1650) adc_max += 10;
+					break;
+				case 7: // ADC max-
+					if(adc_max - 10 >= adc_min) adc_max -= 10;
+					break;
 			}
 		}
 	}

@@ -164,6 +164,8 @@ void fft(complex_t *v, int n, complex_t *tmp) {
 }
 
 vu16 adc_val = 0;
+vu16 adc_min = 200;
+vu16 adc_max = 1400;
 static u32 msec = 0;
 static u16 maxs[ADC_CHS];
 static vu16 DMA_DATA[ADC_SIZE][ADC_CHS];
@@ -191,6 +193,7 @@ void ADC1_Process(void)
 	char buf[24];
 	u8 ch, x, y, x1, x2, redraw;
 	u16 i, max, v, vals[ADC_CHS];
+	const u16 cfgs[ADC_CHS] = {adc_min, adc_max};
 	u32 ms = milliseconds, is_dot;
 	complex_t fft_val[128], fft_res[128];
 	
@@ -287,12 +290,12 @@ void ADC1_Process(void)
 		vols[ch] = v;
 	#endif
 		
-		if(v < 200) v = 0;
-		else v -= 200;
+		if(v < adc_min) v = 0;
+		else v -= adc_min;
 		
-		if(v > 1400) v = 1400;
+		if(v > adc_max) v = adc_max;
 		
-		v /= 14;
+		v = v * 100 / adc_max;
 		
 		vals[ch] = v;
 		if(v > maxs[ch]) maxs[ch] = v;
@@ -320,7 +323,7 @@ void ADC1_Process(void)
 		
 		if(redraw)
 		{
-			sprintf(buf, "%c%03d", (ch ? 'R' : 'L'), vals[ch]);
+			sprintf(buf, "%04d", cfgs[ch]);
 			OLED_DrawStr(ch * 30, 0, buf, 1);
 			v = vals[ch] * 63 / 100;
 			for(x = 0; x < v; x ++)
