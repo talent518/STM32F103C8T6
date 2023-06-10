@@ -97,7 +97,7 @@ void KEY_Display(void) {
 					if(adc_min > 10) adc_min -= 10;
 					break;
 				case 6: // ADC max+
-					if(adc_max + 10 < 1650) adc_max += 10;
+					if(adc_max + 10 < 2048 - adc_min) adc_max += 10;
 					break;
 				case 7: // ADC max-
 					if(adc_max - 10 >= adc_min) adc_max -= 10;

@@ -165,7 +165,7 @@ void fft(complex_t *v, int n, complex_t *tmp) {
 
 vu16 adc_val = 0;
 u16 adc_min = 200;
-u16 adc_max = 1400;
+u16 adc_max = 1800;
 vu8 adc_fps = 0;
 vu8 adc_times = 0;
 static u32 msec = 0;
@@ -191,8 +191,8 @@ void ADC1_Process(void)
 	static u32 msec = 0;
 	
 	char buf[24];
-	u8 ch, x, y, x1, x2, redraw;
-	u16 i, max, v, vals[ADC_CHS];
+	u8 ch, x, y, x1, x2, redraw, h, w, w2, o;
+	u16 i, max, v, vals[ADC_CHS], minmax = adc_min + adc_max;
 	const u16 cfgs[ADC_CHS] = {adc_min, adc_max};
 	u32 ms = milliseconds, is_dot;
 	complex_t fft_val[128], fft_res[128];
@@ -240,40 +240,41 @@ void ADC1_Process(void)
 		OLED_DrawSet(64, 1, 0xff);
 	}
 	
+	if(key_is_fft)
+	{
+		o = 24;
+		w = 20;
+		w2 = 10;
+		h = 10;
+	}
+	else
+	{
+		o = 16;
+		w = 24;
+		w2 = 12;
+		h = 12;
+	}
+	
 	for(ch = 0; ch < ADC_CHS; ch ++)
 	{
 		max = 0;
-		if(key_is_fft)
-		{
-			y = 24 + (20 * ch) + 10;
-		}
-		else
-		{
-			y = 16 + (24 * ch) + 12;
-		}
+		y = o + (w * ch) + w2;
 		for(i = 0; i < ADC_SIZE; i ++)
 		{
 			s32 val = DMA_DATA[i][ch] - 2048;
 			if(redraw && i < 128)
 			{
-				s16 v = (val * (key_is_fft ? 10 : 12) * 3300 / (4095 * (adc_min + adc_max)));
-				if(key_is_fft)
-				{
-					if(v < -10) v = -10;
-					if(v > 10) v = 10;
-				}
-				else
-				{
-					if(v < -12) v = -12;
-					if(v > 12) v = 12;
-				}
+				s16 v = h * val / minmax;
+				if(v > h) v = h;
+				if(v < -h) v = -h;
+				
 				if(is_dot) OLED_DrawDot(i, y - v, 1);
 				else OLED_DrawLine(i, y, i, y - v);
 				
 				if(key_is_fft)
 				{
 					complex_t *fv = &fft_val[i];
-					fv->real = val / 2048.0f;
+					fv->real = (float) val / (float) minmax;
 					fv->imag = 0;
 				}
 			}
@@ -281,13 +282,12 @@ void ADC1_Process(void)
 			if(val > max) max = val;
 		}
 		
-		v = max * 3300 / 4095;
 	#ifdef ADC_DBG
-		vols[ch] = v;
+		vols[ch] = max * 3300 / 4095;
 	#endif
 		
-		if(v < adc_min) v = 0;
-		else v -= adc_min;
+		if(max < adc_min) v = 0;
+		else v = max - adc_min;
 		
 		if(v > adc_max) v = adc_max;
 		
