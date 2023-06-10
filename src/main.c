@@ -67,11 +67,7 @@ int main(void)
 	OLED_Init();
 	
 	Timer_Init(1000-1); // ÉèÖÃ1ms¼ÆÊ±Æ÷
-	
 	COM_SetStatus(1);
-	
-	while(milliseconds < 200);
-	
 	OLED_Config();
 
 	while(milliseconds < 1000);
