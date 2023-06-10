@@ -222,14 +222,25 @@ void ADC1_Process(void)
 	
 	LED_SetUsage(LED_USAGE_ADC, 1);
 	
-	ms = milliseconds / 500;
+	ms = milliseconds / 1000;
 	is_dot = (ms / 20) % 2;
 	redraw = !oled_is_async;
 	
 	if(msec != ms)
 	{
 		msec = ms;
-		for(i = 0; i < ADC_CHS; i ++) maxs[i] = 0;
+		
+		u16 maxv = 0;
+		for(i = 0; i < ADC_CHS; i ++)
+		{
+			v = maxs[i];
+			if(v > 99) v = 99;
+			maxv = maxv * 100 + v;
+			
+			maxs[i] = 0;
+		}
+		adc_val = maxv;
+
 	}
 	
 	if(redraw)
@@ -321,7 +332,7 @@ void ADC1_Process(void)
 		{
 			sprintf(buf, "%04d", cfgs[ch]);
 			OLED_DrawStr(ch * 30, 0, buf, 1);
-			v = vals[ch] * 63 / 100;
+			v = vals[ch] * 64 / 100;
 			for(x = 0; x < v; x ++)
 			{
 				OLED_DrawSet(x + 64 * ch, 1, 0xaa);
@@ -340,8 +351,6 @@ void ADC1_Process(void)
 			}
 		}
 	}
-	
-	adc_val = ((maxs[0] / 10) * 100) + (maxs[1] / 10);
 	
 #ifdef ADC_DBG
 	COM_printf("[I][%u][ADC] %.3f %.3f %3u %3u\r\n", milliseconds, vols[0] / 1000.0f, vols[1] / 1000.0f, maxs[0], maxs[1]);
