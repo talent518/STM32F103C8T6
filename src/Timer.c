@@ -52,6 +52,12 @@ void TIM2_IRQHandler(void)
 		
 		LED_SetUsage(LED_USAGE_TIMER, 1);
 		
+		if(msec % 1000 == 0)
+		{
+			adc_fps = adc_times;
+			adc_times = 0;
+		}
+		
 		LED_4x5_Scan();
 		HC595_Display(msec / 100, adc_val);
 		

@@ -6,6 +6,8 @@
 extern vu16 adc_val;
 extern u16 adc_min;
 extern u16 adc_max;
+extern vu8 adc_fps;
+extern vu8 adc_times;
 
 void ADC1_Init(void);
 void ADC1_Process(void);

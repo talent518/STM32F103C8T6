@@ -166,6 +166,8 @@ void fft(complex_t *v, int n, complex_t *tmp) {
 vu16 adc_val = 0;
 u16 adc_min = 200;
 u16 adc_max = 1400;
+vu8 adc_fps = 0;
+vu8 adc_times = 0;
 static u32 msec = 0;
 static u16 maxs[ADC_CHS];
 static vu16 DMA_DATA[ADC_SIZE][ADC_CHS];
@@ -183,12 +185,10 @@ void DMA1_Channel1_IRQHandler(void)
 	DMA_ClearFlag(DMA1_FLAG_TC1);
 }
 
-#define RUNC 32
 void ADC1_Process(void)
 {
-	static u16 maxs[ADC_CHS] = {0, 0}, runs[RUNC], runi = 0, runc = 0;
-	static u32 msec = 0, msec_oled = 0, runsum = 0;
-	static u16 fps = 0;
+	static u16 maxs[ADC_CHS] = {0, 0};
+	static u32 msec = 0;
 	
 	char buf[24];
 	u8 ch, x, y, x1, x2, redraw;
@@ -215,19 +215,7 @@ void ADC1_Process(void)
 
 		LED_SetUsage(LED_USAGE_OLED, 0);
 		
-		v = (milliseconds - msec_oled);
-		runsum += v;
-		if(runc < RUNC)
-		{
-			runc ++;
-		}
-		else
-		{
-			runsum -= runs[runi];
-		}
-		runs[runi++] = v;
-		if(runi == RUNC) runi = 0;
-		fps = (10000 * runc) / runsum;
+		adc_times ++;
 	}
 	
 	if(!is_new_data) return;
@@ -246,8 +234,6 @@ void ADC1_Process(void)
 	
 	if(redraw)
 	{
-		msec_oled = milliseconds;
-
 		OLED_DrawClear();
 		for(i = 0; i < 128; i += 16) OLED_DrawSet(i, 1, 0x80);
 		OLED_DrawSet(0, 1, 0xff);
@@ -363,11 +349,10 @@ void ADC1_Process(void)
 	
 	if(redraw)
 	{
-		
-		sprintf(buf, "%02u%c%02u", calendar.hour, msec % 2 ? ':' : ' ', calendar.min);
-		OLED_DrawStr(98, 0, buf, 1);
-		sprintf(buf, "F%02u.%u", fps / 10, fps % 10);
-		OLED_DrawStr(61, 0, buf, 1);
+		sprintf(buf, "%02u:%02u:%02u", calendar.hour, calendar.min, calendar.sec);
+		OLED_DrawStr(80, 0, buf, 1);
+		sprintf(buf, "F%02u", adc_fps);
+		OLED_DrawStr(58, 0, buf, 1);
 		
 		LED_SetUsage(LED_USAGE_OLED, 1);
 		
