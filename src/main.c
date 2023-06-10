@@ -74,7 +74,7 @@ int main(void)
 	
 	OLED_Config();
 
-	while(milliseconds < 3000);
+	while(milliseconds < 1000);
 	
 	ADC1_Init();
 	IWDG_Init(); // 窗口看门狗初始化函数
