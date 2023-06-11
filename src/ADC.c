@@ -360,45 +360,48 @@ void ADC1_Process(void)
 		sprintf(buf, "F%02u", adc_fps);
 		OLED_DrawStr(58, 0, buf, 1);
 		
-		const u8 maxV = 16;
-		static u8 vvs[2] = {0, 11};
-		vvs[0] --;
-		vvs[1] ++;
-		for(i = 0; i < 2; i ++)
+		if(key_is_bdr1 || key_is_bdr2)
 		{
-			u8 V = vals[i] * (maxV - 2) / 100;
-			u16 vv = vvs[i];
-			u8 yy = O + i * H;
-			if(!V) V = 1;
-			V += 2;
-			for(x = 0; x < 128-1; x ++)
+			const u8 maxV = (key_is_bdr1 ? 8 : 16);
+			static u8 vvs[2] = {0, 11};
+			vvs[0] --;
+			vvs[1] ++;
+			for(i = 0; i < 2; i ++)
 			{
-				v = (vv++) % maxV;
-				if(i == 0) v = (v == 0 || (v >= 2 && v < V));
-				else v = (v == (maxV - 1) || (v < 14 && v > maxV - V - 2));
-				OLED_DrawDot(x, yy, v);
-			}
-			for(y = yy+1; y < yy + H; y ++)
-			{
-				v = (vv++) % maxV;
-				if(i == 0) v = (v == 0 || (v >= 2 && v < V));
-				else v = (v == (maxV - 1) || (v < 14 && v > maxV - V - 2));
-				OLED_DrawDot(127, y, v);
-			}
-			y = yy + H - 1;
-			for(x = 126; x > 0; x--)
-			{
-				v = (vv++) % maxV;
-				if(i == 0) v = (v == 0 || (v >= 2 && v < V));
-				else v = (v == (maxV - 1) || (v < 14 && v > maxV - V - 2));
-				OLED_DrawDot(x, y, v);
-			}
-			for(y = yy + H - 1; y > yy; y --)
-			{
-				v = (vv++) % maxV;
-				if(i == 0) v = (v == 0 || (v >= 2 && v < V));
-				else v = (v == (maxV - 1) || (v < 14 && v > maxV - V - 2));
-				OLED_DrawDot(0, y, v);
+				u8 V = (key_is_bdr1 ? 3 : vals[i] * (maxV - 2) / 100);
+				u16 vv = vvs[i];
+				u8 yy = O + i * H;
+				if(!V) V = 1;
+				V += 2;
+				for(x = 0; x < 128-1; x ++)
+				{
+					v = (vv++) % maxV;
+					if(i == 0) v = (v == 0 || (v >= 2 && v < V));
+					else v = (v == (maxV - 1) || (v < maxV - 2 && v > maxV - V - 2));
+					OLED_DrawDot(x, yy, v);
+				}
+				for(y = yy+1; y < yy + H; y ++)
+				{
+					v = (vv++) % maxV;
+					if(i == 0) v = (v == 0 || (v >= 2 && v < V));
+					else v = (v == (maxV - 1) || (v < maxV - 2 && v > maxV - V - 2));
+					OLED_DrawDot(127, y, v);
+				}
+				y = yy + H - 1;
+				for(x = 126; x > 0; x--)
+				{
+					v = (vv++) % maxV;
+					if(i == 0) v = (v == 0 || (v >= 2 && v < V));
+					else v = (v == (maxV - 1) || (v < maxV - 2 && v > maxV - V - 2));
+					OLED_DrawDot(x, y, v);
+				}
+				for(y = yy + H - 1; y > yy; y --)
+				{
+					v = (vv++) % maxV;
+					if(i == 0) v = (v == 0 || (v >= 2 && v < V));
+					else v = (v == (maxV - 1) || (v < maxV - 2 && v > maxV - V - 2));
+					OLED_DrawDot(0, y, v);
+				}
 			}
 		}
 		

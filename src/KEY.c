@@ -6,7 +6,7 @@
 #include "COM.h"
 #include "ADC.h"
 
-u8 key_is_fft = 0;
+u8 key_adc = 0;
 
 void KEY_Init(void) {
 	TM1638_Init();
@@ -88,7 +88,8 @@ void KEY_Display(void) {
 					}
 					break;
 				case 3: // ADC is fft
-					key_is_fft = !key_is_fft;
+					key_adc ++;
+					if(key_adc > 3) key_adc = 0;
 					break;
 				case 4: // ADC min+
 					if(adc_min + 10 <= adc_max) adc_min += 10;

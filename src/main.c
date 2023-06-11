@@ -46,9 +46,11 @@ static void Timer_Process(void)
 		
 		RTC_Get(); // 更新时间
 		
+	#ifdef RS232_TIME
 		COM_ClearLine = 0;
 		COM_printf("\033[2KRTC: %u-%02u-%02u %s %02u:%02u:%02u.%u\r", calendar.year, calendar.month, calendar.day, weeks[calendar.week], calendar.hour, calendar.min, calendar.sec, calendar.msec / 100);
 		COM_ClearLine = 1;
+	#endif
 	}
 }
 
