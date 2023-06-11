@@ -10,5 +10,6 @@ extern u8 key_adc;
 #define key_is_fft (key_adc == 1)
 #define key_is_bdr1 (key_adc == 2)
 #define key_is_bdr2 (key_adc == 3)
+#define key_is_onech (key_adc == 4)
 
 #endif

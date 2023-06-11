@@ -87,9 +87,9 @@ void KEY_Display(void) {
 						if(ledmode >= 4) ledmode = 0;
 					}
 					break;
-				case 3: // ADC is fft
+				case 3: // ADC mode
 					key_adc ++;
-					if(key_adc > 3) key_adc = 0;
+					if(key_adc > 4) key_adc = 0;
 					break;
 				case 4: // ADC min+
 					if(adc_min + 10 <= adc_max) adc_min += 10;

@@ -191,7 +191,7 @@ void ADC1_Process(void)
 	static u32 msec = 0;
 	
 	char buf[24];
-	u8 ch, x, y, x1, x2, redraw, O, H, h;
+	u8 ch, chb, che, x, y, x1, x2, redraw, O, H, h;
 	u16 i, max, v, vals[ADC_CHS], minmax = adc_min + adc_max;
 	const u16 cfgs[ADC_CHS] = {adc_min, adc_max};
 	u32 ms = milliseconds, is_dot;
@@ -248,7 +248,7 @@ void ADC1_Process(void)
 		OLED_DrawClear();
 		for(i = 0; i < 128; i += 16) OLED_DrawSet(i, 1, 0x80);
 		OLED_DrawSet(0, 1, 0xff);
-		OLED_DrawSet(64, 1, 0xff);
+		if(!key_is_onech) OLED_DrawSet(64, 1, 0xff);
 	}
 	
 	if(key_is_fft)
@@ -256,15 +256,27 @@ void ADC1_Process(void)
 		O = 24;
 		H = 20;
 		h = 10;
+		chb = 0;
+		che = ADC_CHS;
+	}
+	else if(key_is_onech)
+	{
+		O = 16;
+		H = 0;
+		h = 24;
+		chb = 0;
+		che = 1;
 	}
 	else
 	{
 		O = 16;
 		H = 24;
 		h = 12;
+		chb = 0;
+		che = ADC_CHS;
 	}
 	
-	for(ch = 0; ch < ADC_CHS; ch ++)
+	for(ch = chb; ch < che; ch ++)
 	{
 		max = 0;
 		y = O + (H * ch) + h;
@@ -330,7 +342,7 @@ void ADC1_Process(void)
 		{
 			sprintf(buf, "%04d", cfgs[ch]);
 			OLED_DrawStr(ch * 30, 0, buf, 1);
-			v = vals[ch] * 64 / 100;
+			v = vals[ch] * (128 / che) / 100;
 			for(x = 0; x < v; x ++)
 			{
 				OLED_DrawSet(x + 64 * ch, 1, 0xaa);
