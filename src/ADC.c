@@ -15,7 +15,11 @@
 #include <string.h>
 #include <math.h>
 
-#define ADC_SIZE 256
+#ifdef USE_ADC_NORMAL
+#define ADC_SIZE 128
+#else
+#define ADC_SIZE 384
+#endif
 #define ADC_CHS 2
 
 static vu16 DMA_BUF[ADC_SIZE][ADC_CHS];
