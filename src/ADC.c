@@ -191,7 +191,7 @@ void ADC1_Process(void)
 	static u32 msec = 0;
 	
 	char buf[24];
-	u8 ch, x, y, x1, x2, redraw, h, w, w2, o;
+	u8 ch, x, y, x1, x2, redraw, O, H, h;
 	u16 i, max, v, vals[ADC_CHS], minmax = adc_min + adc_max;
 	const u16 cfgs[ADC_CHS] = {adc_min, adc_max};
 	u32 ms = milliseconds, is_dot;
@@ -253,23 +253,21 @@ void ADC1_Process(void)
 	
 	if(key_is_fft)
 	{
-		o = 24;
-		w = 20;
-		w2 = 10;
+		O = 24;
+		H = 20;
 		h = 10;
 	}
 	else
 	{
-		o = 16;
-		w = 24;
-		w2 = 12;
+		O = 16;
+		H = 24;
 		h = 12;
 	}
 	
 	for(ch = 0; ch < ADC_CHS; ch ++)
 	{
 		max = 0;
-		y = o + (w * ch) + w2;
+		y = O + (H * ch) + h;
 		for(i = 0; i < ADC_SIZE; i ++)
 		{
 			s32 val = DMA_DATA[i][ch] - 2048;
@@ -347,7 +345,6 @@ void ADC1_Process(void)
 					if(v > 8) v = 8;
 					OLED_DrawSet(x + 64 * ch, 2, (0xff << (8 - v)));
 				}
-				// OLED_DrawLine(0, 23, 127, 23);
 			}
 		}
 	}
@@ -362,6 +359,48 @@ void ADC1_Process(void)
 		OLED_DrawStr(80, 0, buf, 1);
 		sprintf(buf, "F%02u", adc_fps);
 		OLED_DrawStr(58, 0, buf, 1);
+		
+		const u8 maxV = 16;
+		static u8 vvs[2] = {0, 11};
+		vvs[0] --;
+		vvs[1] ++;
+		for(i = 0; i < 2; i ++)
+		{
+			u8 V = vals[i] * (maxV - 2) / 100;
+			u16 vv = vvs[i];
+			u8 yy = O + i * H;
+			if(!V) V = 1;
+			V += 2;
+			for(x = 0; x < 128-1; x ++)
+			{
+				v = (vv++) % maxV;
+				if(i == 0) v = (v == 0 || (v >= 2 && v < V));
+				else v = (v == (maxV - 1) || (v < 14 && v > maxV - V - 2));
+				OLED_DrawDot(x, yy, v);
+			}
+			for(y = yy+1; y < yy + H; y ++)
+			{
+				v = (vv++) % maxV;
+				if(i == 0) v = (v == 0 || (v >= 2 && v < V));
+				else v = (v == (maxV - 1) || (v < 14 && v > maxV - V - 2));
+				OLED_DrawDot(127, y, v);
+			}
+			y = yy + H - 1;
+			for(x = 126; x > 0; x--)
+			{
+				v = (vv++) % maxV;
+				if(i == 0) v = (v == 0 || (v >= 2 && v < V));
+				else v = (v == (maxV - 1) || (v < 14 && v > maxV - V - 2));
+				OLED_DrawDot(x, y, v);
+			}
+			for(y = yy + H - 1; y > yy; y --)
+			{
+				v = (vv++) % maxV;
+				if(i == 0) v = (v == 0 || (v >= 2 && v < V));
+				else v = (v == (maxV - 1) || (v < 14 && v > maxV - V - 2));
+				OLED_DrawDot(0, y, v);
+			}
+		}
 		
 		LED_SetUsage(LED_USAGE_OLED, 1);
 		
