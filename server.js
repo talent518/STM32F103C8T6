@@ -1,8 +1,21 @@
-const serial = require("serialport");
+const serial = require('serialport');
+if(process.argv.length < 3) {
+	console.log('Usage: node server.js <path> [port]');
+	serial.SerialPort.list().then(ports=>{
+		console.log(ports.filter(p=>{return (p.manufacturer || p.productId);}));
+		process.exit();
+	}).catch(e=>{
+		console.error(e);
+		process.exit();
+	});
+	return;
+}
+
+const serialPath = process.argv[2];
+const PORT = parseInt(/^\d+$/.test(process.argv[3]) ? process.argv[3] : '2023');
 const fs = require('fs');
 const net = require('net');
 const iconv = require('iconv-lite');
-const config = require('./config');
 const conns = [];
 const server = net.createServer(function(conn) {
 	conns.push(conn);
@@ -17,14 +30,22 @@ const server = net.createServer(function(conn) {
 	});
 });
 const serialPort = new serial.SerialPort({
-	path: config.com,
-	baudRate: config.baudRate,
-	dataBits: config.dataBits,
-	parity: config.parity,
-	stopBits: config.stopBits,
-	rtscts: config.rtscts,
+	path: serialPath,
+	baudRate: 230400,
+	dataBits: 8,
+	parity: 'even',
+	stopBits: 1,
+	rtscts: false,
 	autoOpen: false
 });
+const setRTC = function() {
+	const d = new Date();
+	serialPort.write('rtc ' + (d.getYear() + 1900) + ' ' + (d.getMonth() + 1) + ' ' + d.getDate() + ' ' + d.getHours() + ' ' + d.getMinutes() + ' ' + d.getSeconds() + '\r\n', function(e) {
+		if(e) console.error(e);
+	});
+
+	setTimeout(setAlarm, 100);
+};
 const setAlarm = function() {
 	const d = new Date(new Date().getTime() + 50000);
 	serialPort.write('alarm ' + (d.getYear() + 1900) + ' ' + (d.getMonth() + 1) + ' ' + d.getDate() + ' ' + d.getHours() + ' ' + d.getMinutes() + ' ' + d.getSeconds() + '\r\n', function(e) {
@@ -39,16 +60,13 @@ const setAlarm = function() {
 
 serialPort.open(function(e) {
 	if(e) {
-		console.log('open serial '  + config.com + ' failure', e);
+		console.log('open serial '  + serialPath + ' failure', e);
 		process.exit();
 	} else {
-		console.log('open serial '  + config.com + ' success');
+		console.log('open serial '  + serialPath + ' success');
 	}
-	const d = new Date();
-	serialPort.write('rtc ' + (d.getYear() + 1900) + ' ' + (d.getMonth() + 1) + ' ' + d.getDate() + ' ' + d.getHours() + ' ' + d.getMinutes() + ' ' + d.getSeconds() + '\r\n', function(e) {
-		if(e) console.error(e);
-	});
-	setTimeout(setAlarm, 100); // 第一次0.1秒后设置1分钟后的闹钟
+	
+	setTimeout(setRTC, 100);
 });
 
 serialPort.on('data', function(data) {
@@ -67,8 +85,8 @@ process.stdin.on('data', function(data) {
 	});
 });
 
-server.listen(config.port, function() {
-	console.log('Serial Service listen port is ' + config.port);
+server.listen(PORT, function() {
+	console.log('Serial Service listen port is ' + PORT);
 });
 
 //捕获异常，防止崩溃
