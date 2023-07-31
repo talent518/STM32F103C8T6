@@ -136,8 +136,8 @@ void OLED_Config(void)
 void OLED_SetPos(u8 x, u8 y)
 {
 	OLED_WriteCmd(0xb0 + y);
-	OLED_WriteCmd(((x & 0xf0) >> 4) | 0x10);
-	OLED_WriteCmd((x & 0x0f) | 0x01);
+	OLED_WriteCmd((x & 0x0f));
+	OLED_WriteCmd((x >> 4) | 0x10);
 }
 
 /**
